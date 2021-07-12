@@ -1,0 +1,24 @@
+site_name: miku API Wrapper
+site_url: https://example.com/
+
+theme:
+  name: "material"
+
+nav:
+  - Home: index.md
+  - Basic-Example: basic-example.md
+  - API-Reference:
+    - Client: API-Reference/client.md
+    - Anime: API-Reference/anime.md
+    - Image: API-Reference/image.md
+    - Paginator: API-Reference/paginator.md
+    - Page: API-Reference/page.md
+
+plugins:
+- search
+- mkdocstrings
+
+markdown_extensions:
+  - pymdownx.highlight
+  - pymdownx.superfences
+  - admonition
