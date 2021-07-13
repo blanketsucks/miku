@@ -4,11 +4,10 @@ import asyncio
 
 async def main():
     async with miku.AnilistClient() as client:
-        characters = await client.character('nino nakano')
-        nino = characters[0]
-
-        print(nino._payload)
-
-
+        medias = await client.media('Darling in the FRANXX')
         
+        for media in medias:
+            print(media.is_licensed)
+            print(media)
+
 asyncio.run(main())

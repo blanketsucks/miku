@@ -1,4 +1,5 @@
 site_name: Miku
+site_url: 'http://localhost:8000'
 
 repo_name: blanketsucks/miku
 repo_url: https://github.com/blanketsucks/miku
@@ -12,14 +13,19 @@ nav:
   - API-Reference:
     - Client: API-Reference/client.md
     - Media: API-Reference/media.md
-    - Character: API-Reference/media.md
+    - Character: API-Reference/character.md
     - Image: API-Reference/image.md
     - Paginator: API-Reference/paginator.md
     - Page: API-Reference/page.md
 
 plugins:
 - search
-- mkdocstrings
+- mkdocstrings:
+    default_handler: python
+    handlers:
+      python:
+        rendering:
+          show_source: false
 
 markdown_extensions:
   - pymdownx.highlight

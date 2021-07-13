@@ -37,7 +37,7 @@ class Page(Generic[T]):
     def __iter__(self) -> Page[T]:
         """
         Returns:
-            This same [Page](./page.md) instance.
+            This same [Page](./page.md) object.
         """
         return self
 
@@ -153,7 +153,7 @@ class Paginator(Generic[T]):
             page: The number of the page.
 
         Returns:
-            a [Page](./page.md) instance or None.
+            a [Page](./page.md) object or None.
         """
 
         return self.pages.get(page)
@@ -163,7 +163,7 @@ class Paginator(Generic[T]):
         Fetches the next page.
 
         Returns:
-            a [Page](./page.md) instance or None.
+            a [Page](./page.md) object or None.
         """
 
         if not self.has_next_page:
@@ -192,7 +192,7 @@ class Paginator(Generic[T]):
         Fetches the current page.
 
         Returns:
-            a [Page](./page.md) instance or None.
+            a [Page](./page.md) object or None.
         """
         json = await self.http.request(self.query, self.vars)
         data = json['data']
@@ -207,7 +207,7 @@ class Paginator(Generic[T]):
         Fetches the previous page.
 
         Returns:
-            a [Page](./page.md) instance or None.
+            a [Page](./page.md) object or None.
         """
         vars = self.vars.copy()
         page = self.current_page - 1
@@ -229,10 +229,10 @@ class Paginator(Generic[T]):
         Collects all the fetchable pages and returns them as a list
 
         Args:
-            get_page_data: A bool indiacting wether to get the data from the fetched page or not.
+            get_page_data: A bool indiacting whether to get the data from the fetched page or not.
 
         Returns:
-            A list containing [Page](./page.md) instances or elements.   
+            A list containing [Page](./page.md) objects or [Page](./page.md) elements.   
         """
 
         def collect(pages, page):
@@ -258,7 +258,7 @@ class Paginator(Generic[T]):
     def __aiter__(self) -> Paginator[T]:
         """
         Returns:
-            This same [Paginator](./paginator.md) instance.
+            This same [Paginator](./paginator.md) object.
         """
         return self
 

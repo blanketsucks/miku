@@ -95,11 +95,11 @@ class Character:
         return [_get_media(anime)(anime, self._session) for anime in animes]
 
     @property
-    def name(self):
+    def name(self) -> Name:
         """
         Returns:
             A `Name` object containing the following attributes: 
-            'first', 'middle', 'last', 'full' and 'native'.
+            `first`, `middle`, `last`, `full` and `native`.
         """
         name = self._payload['name']
         return Name(name['first'], name['middle'], name['last'], name['full'], name['native'])
@@ -132,8 +132,8 @@ class Character:
     def birth(self) -> BirthDate:
         """
         Returns:
-            A `BirthDate` object which contains the: 'year', 'month' and 'day' properties,
-            and the `get_datetime` method which returns `Optional[Tuple[datetime.datetime]].
+            A `BirthDate` object which contains the: `year`, `month` and `day` properties,
+            and the `get_datetime` method which returns `Optional[Tuple[datetime.datetime]]`.
         """
         return BirthDate(self._payload['dateOfBirth'])
 

@@ -13,13 +13,13 @@ class AnilistClient:
     @classmethod
     def from_session(cls, session: aiohttp.ClientSession) -> 'AnilistClient':
         """
-        Create a Client instance from a user defined `aiohttp.ClientSession`.
+        Create a Client object from a user defined `aiohttp.ClientSession`.
 
         Args:
-            session: An instance of `aiohttp.ClientSession`
+            session: An object of `aiohttp.ClientSession`
 
         Returns:
-            A [AnilistClient](./client.md) instance.
+            A [AnilistClient](./client.md) object.
         """
         if not isinstance(session, aiohttp.ClientSession):
             ret = 'Expected an aiohttp.ClientSession instance but got {0.__class__.__name__!r} instead'
@@ -38,8 +38,8 @@ class AnilistClient:
 
     def media(self, name: str, type: Optional[str]=None, *, per_page: int=3, page: int=1) -> Paginator[Media]:
         """
-        Retruns a [Paginator](./paginator.md) instance which can be iterated through to get an instance of 
-        [Page](./page.md) which the same thing can be done for to retrieve the [Media](./media.md) instance.
+        Retruns a [Paginator](./paginator.md) object which can be iterated through to get an object of 
+        [Page](./page.md) which the same thing can be done for to retrieve the [Media](./media.md) object.
 
         Args:
             name: The name of the media being searched.
@@ -48,14 +48,14 @@ class AnilistClient:
             per_page: Amount of results shown per page.
 
         Returns:
-            A [Paginator](./paginator.md) instance.
+            A [Paginator](./paginator.md) object.
         """
         return self.http.get_media(name, type, per_page=per_page, page=page)
 
     def anime(self, name: str, *, per_page: int=3, page: int=1) -> Paginator[Anime]:
         """
-        The same as [AnilistClient.media](./client.md) but the [Page](./page.md) retreived through the
-        [Paginator](./paginator.md) return an [Anime](./media.md) instance.
+        The same as [AnilistClient.media](./client.md#miku.client.AnilistClient.media) but the [Page](./page.md) retreived through the
+        [Paginator](./paginator.md) returns an [Anime](./media.md) object.
 
         Args:
             name: The name of the anime being searched.
@@ -63,14 +63,14 @@ class AnilistClient:
             per_page: Amount of results shown per page.
 
         Returns:
-            A [Paginator](./paginator.md) instance.
+            A [Paginator](./paginator.md) object.
         """
         return self.http.get_anime(name, per_page=per_page, page=page)
 
     def manga(self, name: str, *, per_page: int=3, page: int=1) -> Paginator[Manga]:
         """
-        The same as [miku.client.AnilistClient.media](./media.md) but the [Page](./page.md) retreived through the
-        [Paginator](./paginator.md) return a [Manga](./media.md) instance.
+        The same as [AnilistClient.media](./client.md#miku.client.AnilistClient.media) but the [Page](./page.md) retreived through the
+        [Paginator](./paginator.md) returns a [Manga](./media.md) object.
 
         Args:
             name: The name of the manga being searched.
@@ -78,21 +78,21 @@ class AnilistClient:
             per_page: Amount of results shown per page.
 
         Returns:
-            A [Paginator](./paginator.md) instance.
+            A [Paginator](./paginator.md) object.
         """
         return self.http.get_manga(name, per_page=per_page, page=page)
 
     def character(self, name: str, *, per_page: int=3, page: int=1) -> Paginator[Character]:
         """
-        The same as [miku.client.AnilistClient.media](./media.md) but the [Page](./page.md) retreived through the
-        [Paginator](./paginator.md) return a [Character](./character.md) instance.
+        The same as [AnilistClient.media](./client.md#miku.client.AnilistClient.media) but the [Page](./page.md) retreived through the
+        [Paginator](./paginator.md) returns a [Character](./character.md) object.
 
         Args:
             name: The name of the character being searched.
             page: The page to show for the search.
             per_page: Amount of results shown per page.
-s
+            
         Returns:
-            A [Paginator](./paginator.md) instance.
+            A [Paginator](./paginator.md) object.
         """
         return self.http.get_character(name, per_page=per_page, page=page)

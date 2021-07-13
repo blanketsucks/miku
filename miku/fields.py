@@ -12,6 +12,17 @@ ANIME_FIELDS = (
     'idMal',
     'type',
     'format',
+    'season',
+    'duration',
+    'chapters',
+    'volumes',
+    'isLicensed',
+    'source',
+    'updatedAt',
+    'genres',
+    'trending',
+    'isAdult',
+    'synonyms'
 )
 
 _anime = ' '.join(ANIME_FIELDS)

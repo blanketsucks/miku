@@ -1,6 +1,7 @@
 from collections import namedtuple
 from typing import Any, Dict, List, Optional, TYPE_CHECKING
 import enum
+import datetime
 import aiohttp
 
 from .image import Image
@@ -11,9 +12,6 @@ if TYPE_CHECKING:
 Tag = namedtuple('Tag', ['name'])
 
 class MediaFormat(enum.Enum):
-    """
-    An `enum.Enum` defining a media format.
-    """
     TV = 'TV'
     TV_SHORT = 'TV_SHORT'
     MOVIE = 'MOVIE'
@@ -25,9 +23,6 @@ class MediaFormat(enum.Enum):
     ONE_SHOT = 'ONE_SHOT'
 
 class MediaStatus(enum.Enum):
-    """
-    An `enum.Enum` defining a media status.
-    """
     FINISHED = 'FINISHED'
     RELEASING = 'RELEASING'
     NOT_YET_RELEASED = 'NOT_YET_RELEASED'
@@ -35,11 +30,19 @@ class MediaStatus(enum.Enum):
     HIATUS = 'HIATUS'
 
 class MediaType(enum.Enum):
-    """
-    An `enum.Enum` defining a media type.
-    """
     ANIME = 'ANIME'
     MANGA = 'MANGA'
+
+class MediaSource(enum.Enum):
+    ORIGINAL = 'ORIGINAL'
+    MANGA = 'MANGA'
+    LIGHT_NOVEL = 'LIGHT_NOVEL'
+    VISUAL_NOVEL = 'VISUAL_NOVEL'
+    VIDEO_GAME = 'VIDEO_GAME'
+    OTHER = 'OTHER'
+    NOVEL = 'NOVEL'
+    DOUJINSHI = 'DOUJINSHI'
+    ANIME = 'ANIME'
 
 class Title:
     def __init__(self, payload) -> None:
@@ -78,6 +81,22 @@ class Media:
         return MediaType(self._payload['type'])
 
     @property
+    def format(self) -> MediaFormat:
+        """
+        Returns:
+            The format of this media.
+        """
+        return MediaFormat(self._payload['format'])
+
+    @property
+    def status(self) -> MediaStatus:
+        """
+        Returns:
+            The status of this media.
+        """
+        return MediaStatus(self._payload['status'])
+
+    @property
     def tags(self) -> List[Tag]:
         """
         Returns:
@@ -100,6 +119,82 @@ class Media:
             The average score of this media.
         """
         return self._payload['averageScore']
+
+    @property
+    def duration(self) -> Optional[int]:
+        """
+        Returns:
+            The general length of each anime episode in minutes or None.
+        """
+        return self._payload['duration']
+
+    @property
+    def chapters(self) -> Optional[int]:
+        """
+        Returns:
+            The amount of chapters the manga has when complete or None.
+        """
+        return self._payload['chapters']
+
+    @property
+    def volumes(self) -> Optional[int]:
+        """
+        Returns:
+            The amount of volumes the manga has when complete or None.
+        """
+        return self._payload['volumes']
+
+    @property
+    def source(self) -> MediaSource:
+        return self._payload['source']
+
+    @property
+    def is_licensed(self) -> bool:
+        """
+        Returns:
+            If the media is officially licensed or a self-published doujin release.
+        """
+        return self._payload['isLicensed']
+
+    @property
+    def updated_at(self) -> datetime.datetime:
+        """
+        Returns:
+            The last time this media was updated at.
+        """
+        return datetime.datetime.fromtimestamp(self._payload['updatedAt'])
+
+    @property
+    def genres(self) -> List[str]:
+        """
+        Returns:
+            The genres of this media.
+        """
+        return self._payload['genres']
+
+    @property
+    def trending(self) -> int:
+        """
+        Returns:
+            The amount of related activity in the past hour.
+        """
+        return self._payload['trending']
+
+    @property
+    def is_adult(self) -> bool:
+        """
+        Returns:
+            A bool indecating if the media is intended only for 18+ adult audiences.
+        """
+        return self._payload['isAdult']
+
+    @property
+    def synonyms(self) -> List[str]:
+        """
+        Returns:
+            Alternative titles of the media.
+        """
+        return self._payload['synonyms']
 
     @property
     def episodes(self) -> Optional[int]:
