@@ -26,5 +26,4 @@ CHARACTER_FIELDS = (
     'age',
     'siteUrl',
     'favourites',
-    'media () edges { node { {fields} }'
 )

@@ -1,4 +1,4 @@
-from .anime import Anime
+from .media import Anime, Manga, Media, MediaFormat, MediaStatus, MediaType
 from .character import Character
 from .client import AnilistClient
 from .image import Image

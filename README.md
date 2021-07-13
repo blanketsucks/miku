@@ -1,17 +1,29 @@
 # Basic Usage
 
-Fetching an anime
+Fetching animes
 ```py
 import miku
 import asyncio
 
 async def main():
     async with miku.AnilistClient() as client:
-        paginator = client.anime('Gurren Lagann')
+        animes = await client.anime('Gurren Lagann')
+        for anime in animes:
+            print(anime)
 
-        async for page in paginator:
-            for anime in page:
-                print(anime.name.native)
+asyncio.run(main())
+```
+
+Fetching mangas
+```py
+import miku
+import asyncio
+
+async def main():
+    async with miku.AnilistClient() as client:
+        mangas = await client.manga('Bakemonogatari')
+        for manga in mangas:
+            print(manga)
 
 asyncio.run(main())
 ```
@@ -23,11 +35,9 @@ import asyncio
 
 async def main():
     async with miku.AnilistClient() as client:
-        paginator = client.character('Koyomi Araragi')
-
-        async for page in paginator:
-            for character in page:
-                print(character.name.full)
+        characters = await client.character('Miku Nakano')
+        for character in characters:
+            print(character)
 
 asyncio.run(main())
 ```
@@ -42,11 +52,26 @@ async def main():
     session = aiohttp.ClientSession()
     
     async with miku.AnilistClient.from_session(session) as client:
-        paginator = client.anime('Gurren Lagann')
+        animes = await client.anime('Kanojo mo Kanojo')
+
+        for anime in animes:
+            print(anime)
+
+asyncio.run(main())
+```
+
+Using the `miku.Paginator` class
+```py
+import miku
+import asyncio
+
+async def main():
+    async with miku.AnilistClient() as client:
+        paginator = client.anime('5-toubun no Hanayome')
 
         async for page in paginator:
             for anime in page:
-                print(anime.name.native)
+                print(anime)
 
 asyncio.run(main())
 ```

@@ -1,6 +1,17 @@
 from __future__ import annotations
 
-from typing import Any, Dict, Generic, List, Optional, TYPE_CHECKING, Type, TypeVar
+from typing import (
+    Any, 
+    Dict, 
+    Generator, 
+    Generic, 
+    List, 
+    Optional, 
+    TYPE_CHECKING, 
+    Type, 
+    TypeVar, 
+    Union
+)
 import aiohttp
 
 if TYPE_CHECKING:
@@ -213,13 +224,22 @@ class Paginator(Generic[T]):
 
         return Page(self.type, json, self.model, self.http.session)
 
-    async def collect(self) -> List[Page[T]]:
+    async def collect(self, get_page_data: bool=False) -> Union[List[Page[T], List[T]]]:
         """
         Collects all the fetchable pages and returns them as a list
 
+        Args:
+            get_page_data: A bool indiacting wether to get the data from the fetched page or not.
+
         Returns:
-            A list containing [Page](./page.md) instances.   
+            A list containing [Page](./page.md) instances or elements.   
         """
+
+        def collect(pages, page):
+            if get_page_data:
+                return pages.extend(page.collect())
+
+            pages.append(page)
 
         pages = []
 
@@ -228,12 +248,12 @@ class Paginator(Generic[T]):
             if not page:
                 break
 
-            pages.append(page)
+            collect(pages, page)
 
         return pages
 
-    def __await__(self):
-        return self.collect().__await__()
+    def __await__(self) -> Generator[Any, None, List[T]]:
+        return self.collect(get_page_data=True).__await__()
 
     def __aiter__(self) -> Paginator[T]:
         """

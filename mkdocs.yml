@@ -1,5 +1,7 @@
-site_name: miku API Wrapper
-site_url: https://example.com/
+site_name: Miku
+
+repo_name: blanketsucks/miku
+repo_url: https://github.com/blanketsucks/miku
 
 theme:
   name: "material"
@@ -9,7 +11,8 @@ nav:
   - Basic-Example: basic-example.md
   - API-Reference:
     - Client: API-Reference/client.md
-    - Anime: API-Reference/anime.md
+    - Media: API-Reference/media.md
+    - Character: API-Reference/media.md
     - Image: API-Reference/image.md
     - Paginator: API-Reference/paginator.md
     - Page: API-Reference/page.md

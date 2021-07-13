@@ -4,7 +4,7 @@ import aiohttp
 
 from .query import Query, QueryFields, QueryOperation
 from .fields import ANIME_FIELDS, CHARACTER_FIELDS
-from .anime import Anime
+from .media import Anime, Manga, Media
 from .character import Character
 
 class HTTPException(Exception):
@@ -51,7 +51,7 @@ class HTTPHandler:
 
         return await self.session.close()
 
-    def get_anime(self, search: str, *, per_page: int=5, page: int=0):
+    def get_media(self, search: str, type: str=None, *, per_page: int=5, page: int=0):
         operation = QueryOperation(
             type="query", 
             variables={"$page": "Int", "$perPage": "Int", "$search": "String"}
@@ -60,7 +60,12 @@ class HTTPHandler:
         fields = QueryFields("Page", page="$page", perPage="$perPage")
         fields.add_field("pageInfo", "total", "currentPage", "lastPage", "hasNextPage", "perPage")
 
-        fields.add_field("media (search: $search, type: ANIME)", ' '.join(ANIME_FIELDS))
+        field = fields.add_field("media", *ANIME_FIELDS, search='$search')
+
+        if type:
+            field.arguments['type'] = type
+
+        field.add_field('characters', 'nodes { ' + ' '.join(CHARACTER_FIELDS) + ' }')
 
         query = Query(operation=operation, fields=fields)
         query = query.build()
@@ -71,7 +76,22 @@ class HTTPHandler:
             'perPage': per_page
         }
 
-        return Paginator(self, 'media', query, variables, Anime)
+        print(variables)
+
+        cls = Media
+
+        if type == 'ANIME':
+            cls = Anime
+        else:
+            cls = Manga
+
+        return Paginator(self, 'media', query, variables, cls)  
+
+    def get_anime(self, search: str, *, per_page: int=5, page: int=0):
+        return self.get_media(search, 'ANIME', per_page=per_page, page=page)
+
+    def get_manga(self, search: str, *, per_page: int=5, page: int=0):
+        return self.get_media(search, 'MANGA', per_page=per_page, page=page)
 
     def get_character(self, search: str, *, per_page: int=5, page: int=0):
         operation = QueryOperation(
@@ -82,7 +102,9 @@ class HTTPHandler:
         fields = QueryFields("Page", page="$page", perPage="$perPage")
 
         fields.add_field("pageInfo", "total", "currentPage", "lastPage", "hasNextPage", "perPage")
-        fields.add_field("characters (search: $search)", ' '.join(CHARACTER_FIELDS))
+        field = fields.add_field("characters", *CHARACTER_FIELDS, search='$search')
+
+        field.add_field('media', 'nodes { ' + ' '.join(ANIME_FIELDS) + ' }')
 
         query = Query(operation=operation, fields=fields)
         query = query.build()
