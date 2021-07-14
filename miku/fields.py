@@ -25,8 +25,6 @@ ANIME_FIELDS = (
     'synonyms'
 )
 
-_anime = ' '.join(ANIME_FIELDS)
-
 CHARACTER_FIELDS = (
     'name { first middle last full native }',
     'id',
@@ -37,4 +35,14 @@ CHARACTER_FIELDS = (
     'age',
     'siteUrl',
     'favourites',
+)
+
+USER_FIELDS = (
+    'id',
+    'name',
+    'about',
+    'avatar { medium large }',
+    'bannerImage',
+    'bans',
+    'siteUrl'
 )

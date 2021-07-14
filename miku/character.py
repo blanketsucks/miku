@@ -74,9 +74,21 @@ class BirthDate:
         return new, None
 
 class Character:
+    """
+    Attributes:
+        description: The description of this character.
+        gender: The gender of this character.
+        url: This character's Anilist URL.
+        favourites: The number of favourites on this character.
+    """
     def __init__(self, payload, session) -> None:
         self._payload = payload
         self._session = session
+
+        self.description: str = self._payload['description']
+        self.favourites: int = self._payload['favourites']
+        self.url: str = self._payload['siteUrl']
+        self.gender: str = self._payload['gender']
 
     def __repr__(self) -> str:
         return '<Character name={0.name.full!r}>'.format(self)
@@ -101,8 +113,7 @@ class Character:
             A `Name` object containing the following attributes: 
             `first`, `middle`, `last`, `full` and `native`.
         """
-        name = self._payload['name']
-        return Name(name['first'], name['middle'], name['last'], name['full'], name['native'])
+        return Name(self._payload['name'])
 
     @property
     def image(self) -> Image:
@@ -113,22 +124,6 @@ class Character:
         return Image(self._session, self._payload['image'])
 
     @property
-    def description(self) -> str:
-        """
-        Returns:
-            The description of this character.
-        """
-        return self._payload['descrption']
-
-    @property
-    def gender(self) -> str:
-        """
-        Returns:
-            The gender of this character.
-        """
-        return self._payload['gender']
-
-    @property
     def birth(self) -> BirthDate:
         """
         Returns:
@@ -136,19 +131,3 @@ class Character:
             and the `get_datetime` method which returns `Optional[Tuple[datetime.datetime]]`.
         """
         return BirthDate(self._payload['dateOfBirth'])
-
-    @property
-    def url(self) -> str:
-        """
-        Returns:
-            This character's Anilist URL.
-        """
-        return self._payload['siteUrl']
-
-    @property
-    def favourites(self) -> int:
-        """
-        Returns:
-            The number of favourites on this character.
-        """
-        return self._payload['favoutites']

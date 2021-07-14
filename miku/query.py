@@ -35,6 +35,10 @@ class QueryField:
         self._items.append(name)
         return self
 
+    def add_items(self, *names):
+        self._items.extend(list(names))
+        return self
+
     def add_field(self, name: str, *items, **arguments):
         field = QueryField(name, *items, **arguments)
         self.fields.append(field)
@@ -137,24 +141,3 @@ class Query:
 
     def __str__(self) -> str:
         return self.build()
-
-if __name__ == '__main__':
-    import requests
-
-    operation = QueryOperation('query', variables={'$search': 'String'})
-    fields = QueryFields('Media', search='$search', type='ANIME')
-
-    fields.add_field('title', 'romaji', 'english', 'native')
-    fields.add_field('description')
-    fields.add_field('averageScore')
-
-    query = Query(operation=operation, fields=fields)
-    payload = {
-        'query': query.build(),
-        'variables': {'search': 'Gurren Lagann'}
-    }
-
-    resp = requests.post("https://graphql.anilist.co", json=payload)
-    data = resp.json()
-
-    print(data)

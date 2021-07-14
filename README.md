@@ -1,29 +1,27 @@
 # Basic Usage
 
-Fetching animes
+Fetching an anime
 ```py
 import miku
 import asyncio
 
 async def main():
     async with miku.AnilistClient() as client:
-        animes = await client.anime('Gurren Lagann')
-        for anime in animes:
-            print(anime)
+        anime = await client.fetch_anime('Gurren Lagann')
+        print(anime)
 
 asyncio.run(main())
 ```
 
-Fetching mangas
+Fetching a manga
 ```py
 import miku
 import asyncio
 
 async def main():
     async with miku.AnilistClient() as client:
-        mangas = await client.manga('Bakemonogatari')
-        for manga in mangas:
-            print(manga)
+        manga = await client.fetch_manga('Bakemonogatari')
+        print(manga)
 
 asyncio.run(main())
 ```
@@ -35,9 +33,8 @@ import asyncio
 
 async def main():
     async with miku.AnilistClient() as client:
-        characters = await client.character('Miku Nakano')
-        for character in characters:
-            print(character)
+        character = await client.fetch_character('Miku Nakano')
+        print(character)
 
 asyncio.run(main())
 ```
@@ -51,11 +48,22 @@ import aiohttp
 async def main():
     session = aiohttp.ClientSession()
     
-    async with miku.AnilistClient.from_session(session) as client:
-        animes = await client.anime('Kanojo mo Kanojo')
+    async with miku.AnilistClient(session=session) as client:
+        anime = await client.fetch_anime('Kanojo mo Kanojo')
+        print(anime)
 
-        for anime in animes:
-            print(anime)
+asyncio.run(main())
+```
+
+Searching for multiple animes
+```py
+import miku
+import asyncio
+
+async def main():
+    async with miku.AnilistClient() as client:
+        animes = await client.animes('5-toubun no Hanayome')
+        print(animes)
 
 asyncio.run(main())
 ```
@@ -67,7 +75,7 @@ import asyncio
 
 async def main():
     async with miku.AnilistClient() as client:
-        paginator = client.anime('5-toubun no Hanayome')
+        paginator = client.animes('5-toubun no Hanayome')
 
         async for page in paginator:
             for anime in page:

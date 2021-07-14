@@ -1,0 +1,1 @@
+Support for installation via `pip` is currently unsupported.
