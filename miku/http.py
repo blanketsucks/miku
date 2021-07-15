@@ -1,5 +1,5 @@
 import asyncio
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Union
 import aiohttp
 
 from .query import Query, QueryFields, QueryOperation
@@ -8,17 +8,7 @@ from .media import Anime, Manga, Media
 from .character import Character
 from .paginator import Paginator
 from .user import User
-
-class HTTPException(Exception):
-    def __init__(self, message: str, status: int=None) -> None:
-        self.status = status
-        self.message = message
-        
-        ret = message
-        if status:
-            ret = f'{status}: {message}'
-
-        super().__init__(ret)
+from .errors import HTTPException, mapping
 
 class HTTPHandler:
     URL = 'https://graphql.anilist.co'
@@ -58,10 +48,8 @@ class HTTPHandler:
                     continue
                 
                 if data.get('errors'):
-                    errors = data.get('errors')
-                    error = errors[0]
-
-                    raise HTTPException(error['message'], error['status'])
+                    cls = mapping.get(data['errors'][0]['status'], HTTPException)
+                    raise cls(data)
 
                 return data
 
@@ -91,7 +79,7 @@ class HTTPHandler:
             'search': search,
         }
 
-        return await self.request(query, variables),
+        return await self.request(query, variables)
 
     async def get_media(self, search: str, type: str=None):
         operation = QueryOperation(
@@ -180,10 +168,10 @@ class HTTPHandler:
         return Paginator(self, 'media', query, variables, cls)  
 
     def get_animes(self, search: str, *, per_page: int=5, page: int=0):
-        return self.get_media(search, 'ANIME', per_page=per_page, page=page)
+        return self.get_medias(search, 'ANIME', per_page=per_page, page=page)
 
     def get_mangas(self, search: str, *, per_page: int=5, page: int=0):
-        return self.get_media(search, 'MANGA', per_page=per_page, page=page)
+        return self.get_medias(search, 'MANGA', per_page=per_page, page=page)
 
     def get_characters(self, search: str, *, per_page: int=5, page: int=0):
         operation = QueryOperation(

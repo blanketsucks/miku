@@ -15,7 +15,7 @@ __all__ = (
     'MediaStatus',
     'MediaType',
     'MediaSource',
-    'Title',
+    'MediaTitle',
     'Media',
     'Manga',
     'Anime'
@@ -24,62 +24,130 @@ __all__ = (
 Tag = namedtuple('Tag', ['name'])
 
 class MediaFormat(enum.Enum):
-    TV = 'TV'
-    TV_SHORT = 'TV_SHORT'
-    MOVIE = 'MOVIE'
-    OVA = 'OVA'
-    ONA = 'ONA'
-    MUSIC = 'MUSIC'
-    MANGA = 'MANGA'
-    NOVEL = 'NOVEL'
-    ONE_SHOT = 'ONE_SHOT'
+    """
+    An `enum.Enum` defining a media format.
+
+    Attributes:
+        TV: Anime broadcast on television.
+        TV_SHORT: Anime which are under 15 minutes in length and broadcast on television.
+        MOVIE: Anime movies with a theatrical release.
+        SPECIAL: Special episodes that have been included in DVD/Blu-ray releases, picture dramas, pilots, etc.
+        OVA: (Original Video Animation) Anime that have been released directly on DVD/Blu-ray without originally going through a theatrical release or television broadcast.
+        ONA: (Original Net Animation) Anime that have been originally released online or are only available through streaming services.
+        MUSIC: Short anime released as a music video.
+        MANGA: Professionally published manga with more than one chapter.
+        NOVEL: Written books released as a series of light novels.
+        ONE_SHOT: Manga with just one chapter.
+    """
+    TV: str = 'TV'
+    TV_SHORT: str = 'TV_SHORT'
+    MOVIE: str = 'MOVIE'
+    SPECIAL: str = 'SPECIAL'
+    OVA: str = 'OVA'
+    ONA: str = 'ONA'
+    MUSIC: str = 'MUSIC'
+    MANGA: str = 'MANGA'
+    NOVEL: str = 'NOVEL'
+    ONE_SHOT: str = 'ONE_SHOT'
 
 class MediaStatus(enum.Enum):
-    FINISHED = 'FINISHED'
-    RELEASING = 'RELEASING'
-    NOT_YET_RELEASED = 'NOT_YET_RELEASED'
-    CANCELLED = 'CANCELLED'
-    HIATUS = 'HIATUS'
+    """
+    An `enum.Enum` defining a media status.
+
+    Attributes:
+        FINISHED: Has completed and is no longer being released.
+        RELEASING: Currently releasing.
+        NOT_YET_RELEASED: To be released at a later date.
+        CANCELLED: Ended before the work could be finished
+        HIATUS: Is currently paused from releasing and will resume at a later date
+    """
+    FINISHED: str = 'FINISHED'
+    RELEASING: str = 'RELEASING'
+    NOT_YET_RELEASED: str = 'NOT_YET_RELEASED'
+    CANCELLED: str = 'CANCELLED'
+    HIATUS: str = 'HIATUS'
 
 class MediaType(enum.Enum):
-    ANIME = 'ANIME'
-    MANGA = 'MANGA'
+    """
+    An `enum.Enum` defining a media type.
+
+    Attributes:
+        ANIME: Japanese Anime.
+        MANGA: Asian comic
+    """
+    ANIME: str = 'ANIME'
+    MANGA: str = 'MANGA'
 
 class MediaSource(enum.Enum):
-    ORIGINAL = 'ORIGINAL'
-    MANGA = 'MANGA'
-    LIGHT_NOVEL = 'LIGHT_NOVEL'
-    VISUAL_NOVEL = 'VISUAL_NOVEL'
-    VIDEO_GAME = 'VIDEO_GAME'
-    OTHER = 'OTHER'
-    NOVEL = 'NOVEL'
-    DOUJINSHI = 'DOUJINSHI'
-    ANIME = 'ANIME'
+    """
+    An `enum.Enum` defining a medias' source.
 
-class Title:
+    Attributes:
+        ORIGINAL: An original production not based of another work.
+        MANGA: Asian comic book.
+        LIGHT_NOVEL: Written work published in volumes.
+        VISUAL_NOVEL: Video game driven primary by text and narrative.
+        VIDEO_GAME: Video game.
+        OTHER: Other.
+        NOVEL: Written works not published in volumes.
+        DOUJINSHI: Self-published works.
+        ANIME: Japanese Anime.
+    """
+    ORIGINAL: str = 'ORIGINAL'
+    MANGA: str = 'MANGA'
+    LIGHT_NOVEL: str = 'LIGHT_NOVEL'
+    VISUAL_NOVEL: str = 'VISUAL_NOVEL'
+    VIDEO_GAME: str = 'VIDEO_GAME'
+    OTHER: str = 'OTHER'
+    NOVEL: str = 'NOVEL'
+    DOUJINSHI: str = 'DOUJINSHI'
+    ANIME: str = 'ANIME'
+
+class MediaTitle:
+    """
+    A media title.
+
+    Attributes:
+        romaji: The title in Romaji.
+        english: The title in English.
+        native: The title in native language.
+    """
     def __init__(self, payload) -> None:
-        self.__payload = payload['title']
+        self.romaji: str = payload['title']['romaji']
+        self.english: str = payload['title']['english']
+        self.native: str = payload['title']['native']
 
-    @property
-    def romaji(self) -> str:
-        return self.__payload['romaji']
+    def __repr__(self) -> str:
+        return '<Title romaji={0.romaji!r} english={0.english!r} native={0.native!r}>'.format(self)
 
-    @property
-    def english(self) -> str:
-        return self.__payload['english']
-
-    @property
-    def native(self) -> str:
-        return self.__payload['native']
 
 class Media:
     """
     A class defining a media.
     Both the Manga and Anime classes inherit from this class.
+
+    Attributes:
+        url: Anilist URL for this media.
+        average_score: The average score of this media.
+        is_licensed: a bool indicating if the media is officially licensed or a self-published doujin release.
+        genres: The genres of this media.
+        trending: The amount of related activity in the past hour.
+        is_adult: A bool indicating if the media is intended only for 18+ adult audiences.
+        synonyms: Alternative titles of the media.
+        description: The description of this media.
     """
     def __init__(self, payload: Dict[str, Any], session: aiohttp.ClientSession) -> None:
         self._payload = payload
         self._session = session
+
+        self.url: str = self._payload['siteUrl']
+        self.average_score: int = self._payload['averageScore']
+        self.is_licensed: bool = self._payload['isLicensed']
+        self.genres: List[str] = self._payload['genres']
+        self.trending: int = self._payload['trending']
+        self.is_adult: bool = self._payload['isAdult']
+        self.synonyms: List[str] = self._payload['synonyms']
+        self.description: str = self._payload['description']
 
     def __repr__(self) -> str:
         return '<{0.__class__.__name__} title={0.title.romaji!r}>'.format(self)
@@ -88,7 +156,7 @@ class Media:
     def type(self) -> MediaType:
         """
         Returns:
-            The type of the media.
+            A [MediaType](./media-type.md) object.
         """
         return MediaType(self._payload['type'])
 
@@ -96,7 +164,7 @@ class Media:
     def format(self) -> MediaFormat:
         """
         Returns:
-            The format of this media.
+            A [MediaFormat](./media-format.md) object.
         """
         return MediaFormat(self._payload['format'])
 
@@ -104,33 +172,17 @@ class Media:
     def status(self) -> MediaStatus:
         """
         Returns:
-            The status of this media.
+            A [MediaStatus](./media-status.md) object.
         """
         return MediaStatus(self._payload['status'])
 
     @property
-    def tags(self) -> List[Tag]:
+    def tags(self) -> List[str]:
         """
         Returns:
-            A list of `Tag`s.
+            A list of tag names.
         """
-        return [Tag(data['name']) for data in self._payload['tags']]
-
-    @property
-    def url(self) -> str:
-        """
-        Returns:
-            Anilist URL for this media.
-        """
-        return self._payload['siteUrl']
-
-    @property
-    def score(self) -> int:
-        """
-        Returns:
-            The average score of this media.
-        """
-        return self._payload['averageScore']
+        return [tag['name'] for tag in self._payload['tags']]
 
     @property
     def duration(self) -> Optional[int]:
@@ -158,15 +210,11 @@ class Media:
 
     @property
     def source(self) -> MediaSource:
-        return self._payload['source']
-
-    @property
-    def is_licensed(self) -> bool:
         """
         Returns:
-            If the media is officially licensed or a self-published doujin release.
+            A [MediaSource](./media-source.md) object.
         """
-        return self._payload['isLicensed']
+        return MediaSource(self._payload['source'])
 
     @property
     def updated_at(self) -> datetime.datetime:
@@ -175,38 +223,6 @@ class Media:
             The last time this media was updated at.
         """
         return datetime.datetime.fromtimestamp(self._payload['updatedAt'])
-
-    @property
-    def genres(self) -> List[str]:
-        """
-        Returns:
-            The genres of this media.
-        """
-        return self._payload['genres']
-
-    @property
-    def trending(self) -> int:
-        """
-        Returns:
-            The amount of related activity in the past hour.
-        """
-        return self._payload['trending']
-
-    @property
-    def is_adult(self) -> bool:
-        """
-        Returns:
-            A bool indecating if the media is intended only for 18+ adult audiences.
-        """
-        return self._payload['isAdult']
-
-    @property
-    def synonyms(self) -> List[str]:
-        """
-        Returns:
-            Alternative titles of the media.
-        """
-        return self._payload['synonyms']
 
     @property
     def episodes(self) -> Optional[int]:
@@ -218,20 +234,12 @@ class Media:
         return self._payload['episodes']
 
     @property
-    def title(self) -> Title:
+    def title(self) -> MediaTitle:
         """
         Returns:
-            A `Title` object with the attribute: 'english', 'native' and 'romaji'.
+            A [MediaTitle](./media-title.md) object.
         """
-        return Title(self._payload)
-
-    @property
-    def description(self) -> str:
-        """
-        Returns:
-            The description of this media.
-        """
-        return self._payload['description']
+        return MediaTitle(self._payload)
 
     @property
     def banner_image(self) -> Image:

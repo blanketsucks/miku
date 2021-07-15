@@ -1,0 +1,1 @@
+::: miku.user.UserNotificationOptionType

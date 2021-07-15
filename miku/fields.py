@@ -26,7 +26,7 @@ ANIME_FIELDS = (
 )
 
 CHARACTER_FIELDS = (
-    'name { first middle last full native }',
+    'name { first middle last full native alternative }',
     'id',
     'image { large medium }',
     'description',
@@ -44,5 +44,9 @@ USER_FIELDS = (
     'avatar { medium large }',
     'bannerImage',
     'bans',
-    'siteUrl'
+    'siteUrl',
+    'isFollower',
+    'isFollowing',
+    'isBlocked',
+    'options { titleLanguage displayAdultContent airingNotifications profileColor notificationsOptions { type enabled } }'
 )

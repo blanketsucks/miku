@@ -3,8 +3,8 @@ import asyncio
 
 async def main():
     async with miku.AnilistClient() as client:
-        for i in range(1000):
-            anime = await client.fetch_anime('Gurren Lagann')
-            print(anime)
+        user = await client.fetch_user('blanketsucks')
+        print(user.options.title_language)
+
 
 asyncio.run(main())

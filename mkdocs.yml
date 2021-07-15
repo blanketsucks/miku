@@ -7,6 +7,7 @@ repo_url: https://github.com/blanketsucks/miku
 theme:
   name: "material"
 
+
 nav:
   - Home: index.md
   - Installation: installation.md
@@ -14,20 +15,26 @@ nav:
   - API Reference:
     - Client: API-Reference/client.md
     - Media: API-Reference/media.md
+    - MediaStatus: API-Reference/media-status.md
+    - MediaFormat: API-Reference/media-format.md
+    - MediaType: API-Reference/media-type.md
+    - MediaSource: API-Reference/media-source.md
+    - MediaTitle: API-Reference/media-title.md
     - Character: API-Reference/character.md
+    - CharacterName: API-Reference/character-name.md
+    - CharacterBirthdate: API-Reference/character-birthdate.md
     - User: API-Reference/user.md
+    - UserOptions: API-Reference/user-options.md
+    - UserTitleLanguage: API-Reference/user-title-language.md
+    - UserNotificationOption: API-Reference/user-notification.md
+    - UserNotificationOptionType: API-Reference/user-notification-type.md
     - Image: API-Reference/image.md
     - Paginator: API-Reference/paginator.md
     - Page: API-Reference/page.md
 
 plugins:
 - search
-- mkdocstrings:
-    default_handler: python
-    handlers:
-      python:
-        rendering:
-          show_source: false
+- mkdocstrings
 
 markdown_extensions:
   - pymdownx.highlight

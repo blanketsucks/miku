@@ -158,7 +158,6 @@ class AnilistClient:
             name: The name of the character being searched.
             page: The page to show for the search.
             per_page: Amount of results shown per page.
-            
         Returns:
             A [Paginator](./paginator.md) object.
         """
