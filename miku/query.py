@@ -1,5 +1,13 @@
 from typing import Dict, List, Optional, Tuple
 
+__all__ = (
+    'QueryIncomplete',
+    'QueryOperation',
+    'QueryFields',
+    'QueryField',
+    'Query'
+)
+
 class QueryIncomplete(Exception):
     def __init__(self, element: str) -> None:
         super().__init__(f'Query missing {element!r} element')

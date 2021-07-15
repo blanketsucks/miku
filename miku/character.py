@@ -8,6 +8,12 @@ from .image import Image
 if TYPE_CHECKING:
     from .media import Manga, Anime
 
+__all__ = (
+    'CharacterName',
+    'CharacterBirthdate',
+    'Character'
+)
+
 class CharacterName:
     """
     Attributes:

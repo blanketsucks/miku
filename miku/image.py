@@ -1,6 +1,10 @@
 from typing import Union, Dict
 from aiohttp import ClientSession
 
+__all__ = (
+    'Image',
+)
+
 class Image:
     def __init__(self, session: ClientSession, payload: Union[Dict[str, str], str]) -> None:
         self._session = session 

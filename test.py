@@ -6,5 +6,4 @@ async def main():
         user = await client.fetch_user('blanketsucks')
         print(user.options.title_language)
 
-
 asyncio.run(main())

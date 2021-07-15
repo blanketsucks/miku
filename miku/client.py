@@ -20,6 +20,10 @@ def _get_event_loop(loop=None) -> asyncio.AbstractEventLoop:
     except RuntimeError:
         return asyncio.get_event_loop()
 
+__all__ = (
+    'AnilistClient',
+)
+
 class AnilistClient:
     def __init__(self, loop: Optional[asyncio.AbstractEventLoop]=None, session: aiohttp.ClientSession=None) -> None:
         """

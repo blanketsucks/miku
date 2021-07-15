@@ -1,5 +1,11 @@
 from typing import Any, Dict, Type, Union
 
+__all__ = (
+    'HTTPException',
+    'Forbidden',
+    'BadRequest'
+)
+
 class HTTPException(Exception):
     status: int = None
 

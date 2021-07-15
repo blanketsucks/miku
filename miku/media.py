@@ -10,7 +10,6 @@ if TYPE_CHECKING:
     from .character import Character
 
 __all__ = (
-    'Tag',
     'MediaFormat',
     'MediaStatus',
     'MediaType',
@@ -21,7 +20,6 @@ __all__ = (
     'Anime'
 )
 
-Tag = namedtuple('Tag', ['name'])
 
 class MediaFormat(enum.Enum):
     """

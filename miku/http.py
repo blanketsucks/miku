@@ -10,6 +10,10 @@ from .paginator import Paginator
 from .user import User
 from .errors import HTTPException, mapping
 
+__all__ = (
+    'HTTPHandler',
+)
+
 class HTTPHandler:
     URL = 'https://graphql.anilist.co'
 

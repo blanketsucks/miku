@@ -1,4 +1,10 @@
 
+__all__ = (
+    'ANIME_FIELDS',
+    'CHARACTER_FIELDS',
+    'USER_FIELDS'
+)
+
 ANIME_FIELDS = (
     'title { romaji english native }',
     'description',
