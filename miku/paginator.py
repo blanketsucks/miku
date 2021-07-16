@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from typing import (
-    Any, 
+    Any,
     Dict, 
     Generator, 
     Generic, 
@@ -14,6 +14,8 @@ from typing import (
 )
 import aiohttp
 
+from .utils import Data
+
 if TYPE_CHECKING:
     from .http import HTTPHandler
 
@@ -23,6 +25,7 @@ __all__ = (
     'Page',
     'Paginator'
 )
+
 
 class Page(Generic[T]):
     def __init__(self,
@@ -93,7 +96,7 @@ class Page(Generic[T]):
             return None
 
         self.current_item += 1
-        return self.model(data, session=self.session)
+        return self.model(payload=data, session=self.session)
 
     def current(self) -> T:
         """
@@ -103,7 +106,7 @@ class Page(Generic[T]):
             The current element on this page.
         """
         data = self.payload[self.current_item]
-        return self.model(data, session=self.session)
+        return self.model(payload=data, session=self.session)
 
     def previous(self) -> T:
         """
@@ -118,14 +121,14 @@ class Page(Generic[T]):
             index = 0
 
         data = self.payload[index]
-        return self.model(data, session=self.session)
+        return self.model(payload=data, session=self.session)
 
-    def collect(self) -> List[T]:
+    def collect(self) -> Data[T]:
         """
         Collects all the elements inside this page and returns them as a list
 
         Returns:
-            A list containing all the elements of this page.   
+            A [Data](./data.md) object.   
         """
 
         data = []
@@ -136,7 +139,7 @@ class Page(Generic[T]):
 
             data.append(ret)
 
-        return data
+        return Data(data)
 
 class Paginator(Generic[T]):
     def __init__(self, http: HTTPHandler, type: str, query: str, vars: Dict[str, Any], model: Type) -> None:
@@ -229,7 +232,7 @@ class Paginator(Generic[T]):
 
         return Page(self.type, json, self.model, self.http.session)
 
-    async def collect(self, get_page_data: bool=False) -> Union[List[Page[T], List[T]]]:
+    async def collect(self, get_page_data: bool=False) -> Union[List[Page[T], Data[T]]]:
         """
         Collects all the fetchable pages and returns them as a list
 
@@ -257,7 +260,7 @@ class Paginator(Generic[T]):
 
         return pages
 
-    def __await__(self) -> Generator[Any, None, List[T]]:
+    def __await__(self) -> Generator[Any, None, Data[T]]:
         return self.collect(get_page_data=True).__await__()
 
     def __aiter__(self) -> Paginator[T]:

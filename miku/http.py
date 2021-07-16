@@ -3,11 +3,12 @@ from typing import Any, Dict, Optional, Union
 import aiohttp
 
 from .query import Query, QueryFields, QueryOperation
-from .fields import ANIME_FIELDS, CHARACTER_FIELDS, USER_FIELDS
+from .fields import *
 from .media import Anime, Manga, Media
 from .character import Character
 from .paginator import Paginator
 from .user import User
+from .staff import Staff
 from .errors import HTTPException, mapping
 
 __all__ = (
@@ -76,6 +77,16 @@ class HTTPHandler:
         for field in USER_FIELDS:
             fields.add_field(field)
 
+        media = ' '.join(ANIME_FIELDS)
+        characters = ' '.join(CHARACTER_FIELDS) 
+        studios = ' '.join(STUDIO_FIELDS)
+
+        anime = 'anime { nodes {' + media + ' }}'
+        manga = 'manga { nodes {' + media + ' }}'
+        character = 'characters { nodes {' + characters + ' }}'
+
+        fields.add_field('favourites', ' '.join((anime, manga, character)))
+
         query = Query(operation, fields)
         query = query.build()
 
@@ -99,6 +110,7 @@ class HTTPHandler:
             fields.add_field(field)
 
         fields.add_field('characters', 'nodes {' + ' '.join(CHARACTER_FIELDS) + ' }')
+        fields.add_field('studios', 'nodes {' + ' '.join(STUDIO_FIELDS) + ' }')
 
         query = Query(operation, fields)
         query = query.build()
@@ -114,6 +126,68 @@ class HTTPHandler:
 
     async def get_manga(self, search: str):
         return await self.get_media(search, 'MANGA')
+
+    async def get_studio(self, search: str):
+        operation = QueryOperation(
+            type="query", 
+            variables={"$search": "String"}
+        )
+
+        fields = QueryFields("Studio", search='$search')
+
+        for field in STUDIO_FIELDS:
+            fields.add_field(field)
+
+        fields.add_field('media', 'nodes {' + ' '.join(ANIME_FIELDS) + ' }')
+
+        query = Query(operation, fields)
+        query = query.build()
+
+        variables = {
+            'search': search,
+        }
+
+        return await self.request(query, variables)
+
+    async def get_staff(self, search: str):
+        operation = QueryOperation(
+            type="query", 
+            variables={"$search": "String"}
+        )
+
+        fields = QueryFields("Staff", search='$search')
+
+        for field in STAFF_FIELDS:
+            fields.add_field(field)
+
+        fields.add_field('characters', 'nodes {' + ' '.join(CHARACTER_FIELDS) + ' }')
+
+        query = Query(operation, fields)
+        query = query.build()
+
+        variables = {
+            'search': search,
+        }
+
+        return await self.request(query, variables)
+
+    async def get_site_statisics(self):
+        operation = QueryOperation(
+            type='query',
+            variables={}
+        )
+
+        fields = QueryFields('SiteStatistics')
+
+        for field in SITE_STATISTICS_FIELDS:
+            fields.add_field(field)
+
+        query = Query(operation, fields)
+        query = query.build()
+
+        print(query)
+
+        return await self.request(query, {})
 
     def get_users(self, search: str, *, per_page: int=5, page: int=0):
         operation = QueryOperation(

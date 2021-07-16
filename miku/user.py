@@ -1,7 +1,9 @@
 from enum import Enum
-from typing import List
+from typing import List, Optional
 
 from .image import Image
+from .media import Manga, Anime
+from .character import Character
 
 __all__ = (
     'UserTitleLanguage',
@@ -91,9 +93,29 @@ class UserOptions:
         self.display_adult_content: bool = payload['displayAdultContent']
         self.airing_notifications: bool = payload['airingNotifications']
         self.profile_color: str = payload['profileColor']
-        self.notification_options: List[UserNotificationOption] = [] if payload.get('notificationOptions') is None else [
+        self.notification_options: List[UserNotificationOption] = [
             UserNotificationOption(data) for data in payload['notificationOptions']
         ]
+
+class UserFavourites:
+    def __init__(self, payload, session) -> None:
+        self._payload = payload
+        self._session = session
+
+    @property
+    def anime(self) -> List[Anime]:
+        animes = self._payload['anime']['nodes']
+        return [Anime(anime, self._session) for anime in animes]
+
+    @property
+    def manga(self) -> List[Manga]:
+        mangas = self._payload['manga']['nodes']
+        return [Anime(manga, self._session) for manga in mangas]
+
+    @property
+    def characters(self) -> List[Character]:
+        characters = self._payload['characters']['nodes']
+        return [Character(character, self._session) for character in characters]
 
 class User:
     """
@@ -122,9 +144,24 @@ class User:
         return Image(self._session, self._payload['avatar'])
 
     @property
+    def banner(self) -> Optional[Image]:
+        """
+        Returns:
+            The banner of the user as an [Image](./image.md) object.
+        """
+        if not self._payload['bannerImage']:
+            return None
+
+        return Image(self._session, self._payload['bannerImage'])
+
+    @property
     def options(self) -> UserOptions:
         """
         Returns:
             A [UserOptions](./user-options.md) object.
         """
         return UserOptions(self._payload['options'])
+
+    @property
+    def favourites(self):
+        return UserFavourites(self._payload['favourites'], self._session)

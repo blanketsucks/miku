@@ -7,6 +7,9 @@ from .media import Anime, Media, Manga
 from .paginator import Paginator
 from .character import Character
 from .user import User
+from .studio import Studio
+from .staff import Staff
+from .statistics import SiteStatistics
 
 def _get_event_loop(loop=None) -> asyncio.AbstractEventLoop:
     if loop:
@@ -42,9 +45,19 @@ class AnilistClient:
     async def __aexit__(self, *exc):
         await self.http.close()
 
+    async def fetch_site_statistics(self) -> SiteStatistics:
+        """
+        Fetches site statistics.
+
+        Returns:
+            A [SiteStatistics][./site-statistics.md] object.
+        """
+        data = await self.http.get_site_statisics()
+        return SiteStatistics(data['data']['SiteStatistics'])
+
     async def fetch_user(self, name: str) -> User:
         """
-        Fetches a single user.
+        Fetches a user.
 
         Returns:
             A [User](./user.md) object.
@@ -54,7 +67,7 @@ class AnilistClient:
 
     async def fetch_media(self, name: str, *, type: Optional[str]=None) -> Media:
         """
-        Fetches a single media.
+        Fetches a media.
 
         Returns:
             A [Media](./media.md) object.
@@ -64,7 +77,7 @@ class AnilistClient:
 
     async def fetch_anime(self, name: str) -> Anime:
         """
-        Fetches a single anime.
+        Fetches an anime.
 
         Returns:
             A [Media](./media.md) object.
@@ -74,7 +87,7 @@ class AnilistClient:
 
     async def fetch_manga(self, name: str) -> Manga:
         """
-        Fetches a single manga.
+        Fetches a manga.
 
         Returns:
             A [Media](./media.md) object.
@@ -84,13 +97,33 @@ class AnilistClient:
 
     async def fetch_character(self, name: str) -> Character:
         """
-        Fetches a single character.
+        Fetches a character.
 
         Returns:
             A [Character](./character.md) object.
         """
         data = await self.http.get_character(name)
         return Character(data['data']['Character'], self.http.session)
+
+    async def fetch_studio(self, name: str) -> Studio:
+        """
+        Fetches a studio.
+        
+        Returns:
+            A [Studio](./studio.md) object.
+        """
+        data = await self.http.get_studio(name)
+        return Studio(data['data']['Studio'], self.http.session)
+
+    async def fetch_staff(self, name: str) -> Staff:
+        """
+        Fetches a staff
+
+        Returns:
+            A [Staff](./staff.md) object.
+        """
+        data = await self.http.get_staff(name)
+        return Staff(data['data']['Staff'], self.http.session)
 
     def users(self, name: str, *, per_page: int=3, page: int=1) -> Paginator[User]:
         """

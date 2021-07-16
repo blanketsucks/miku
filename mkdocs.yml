@@ -28,9 +28,14 @@ nav:
     - UserTitleLanguage: API-Reference/user-title-language.md
     - UserNotificationOption: API-Reference/user-notification.md
     - UserNotificationOptionType: API-Reference/user-notification-type.md
+    - Staff: API-Reference/staff.md
+    - Studio: API-Reference/studio.md
+    - SiteStatistics: API-Reference/site-statistics.md
+    - SiteTrend: API-Reference/site-trend.md
     - Image: API-Reference/image.md
     - Paginator: API-Reference/paginator.md
     - Page: API-Reference/page.md
+    - Data: API-Reference/data.md
 
 plugins:
 - search

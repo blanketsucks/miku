@@ -22,11 +22,14 @@ class QueryOperation:
         vars = ', '.join([f'{k}: {v}' for k, v in self.variables.items()])
 
         if self.name:
-            operation = f'{self.type} {self.name} ({vars}) '
+            operation = f'{self.type} {self.name}'
         else:
-            operation = f'{self.type} ({vars}) '
+            operation = f'{self.type}'
 
-        return operation + '{'
+        if self.variables:
+            operation += f' ({vars}) '
+
+        return operation + ' {'
 
     def __str__(self) -> str:
         return  self.build()
@@ -91,7 +94,12 @@ class QueryFields:
         fields = '\n'.join([field.build() for field in self.fields])
         args = ', '.join([f'{k}: {v}' for k, v in self.arguments.items()])
 
-        query = f'{self.name} ({args}) ' + '{\n' + fields + '\n}'
+        query = f'{self.name} '
+        if self.arguments:
+            query += f'({args}) '
+
+        query +=  '{\n' + fields + '\n}'
+
         return query
 
     def __str__(self) -> str:

@@ -108,13 +108,16 @@ class Character:
         return '<Character name={0.name.full!r}>'.format(self)
 
     @property
-    def apperances(self) -> List[Union[Anime, Manga]]:
+    def apperances(self) -> Optional[List[Union[Anime, Manga]]]:
         """
         This character's apperances on difference mangas and animes.
 
         Returns:
             A list of [Media](./media.md).
         """
+        if not self._payload.get('media'):
+            return None
+
         from .media import _get_media
 
         animes = self._payload['media']['nodes']

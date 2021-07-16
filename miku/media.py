@@ -1,12 +1,14 @@
-from collections import namedtuple
+from __future__ import annotations
 from typing import Any, Dict, List, Optional, TYPE_CHECKING
 import enum
 import datetime
 import aiohttp
 
+from .paginator import Data
 from .image import Image
 
 if TYPE_CHECKING:
+    from .studio import Studio
     from .character import Character
 
 __all__ = (
@@ -257,7 +259,7 @@ class Media:
         return Image(self._session, self._payload['coverImage'])
 
     @property
-    def characters(self) -> List[Character]:
+    def characters(self) -> Data[Character]:
         """
         Returns:
             A list of [Character](./character.md) that appear on this media.
@@ -265,7 +267,7 @@ class Media:
         from .character import Character
 
         characters = self._payload['characters']['nodes']
-        return [Character(data, self._session) for data in characters]
+        return Data([Character(data, self._session) for data in characters])
 
 class Anime(Media):
     pass

@@ -1,9 +1,12 @@
+from miku.character import Character
+from miku.media import Anime
+from miku.paginator import Data
 import miku
 import asyncio
 
 async def main():
     async with miku.AnilistClient() as client:
-        user = await client.fetch_user('blanketsucks')
-        print(user.options.title_language)
+        statistics = await client.fetch_site_statistics()
+        print(statistics.anime)
 
-asyncio.run(main())
+asyncio.get_event_loop().run_until_complete(main())
