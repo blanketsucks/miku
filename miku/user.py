@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import List, Optional, Type
+from typing import List, Optional
 
 from .image import Image
 from .media import Manga, Anime

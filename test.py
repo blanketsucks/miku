@@ -1,8 +1,30 @@
+import asyncio
 import miku
 
-with miku.SyncAnilistClient() as client:
-    anime = client.fetch_anime('Bakemonogatari')
+def sync_client():
+    client = miku.SyncAnilistClient()
+    paginator = client.animes('Bakemonogatari')
+
+    for page in paginator:
+        for media in page:
+            print(media.title)
+
+    client.close()
+
+async def async_client():
+    client = miku.AsyncAnilistClient()
+    paginator = client.medias('Bakemonogatari')
     
-    character = anime.characters.find(lambda character: character.name.full == 'Koyomi Araragi')
-    print(character.apperances)
+    async for page in paginator:
+        for media in page:
+            print(media.title)
+
+    await client.close()
+
+async def main():
+    sync_client()
+    await async_client()
+
+asyncio.run(main())
+
 

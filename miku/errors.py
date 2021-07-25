@@ -8,7 +8,6 @@ __all__ = (
 
 class HTTPException(Exception):
     status: int = None
-
     def __init__(self, data: Union[str, Dict[str, Any]]) -> None:
         if isinstance(data, dict):
             error: Dict[str, Any] = data['errors'][0]

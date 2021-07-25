@@ -8,7 +8,6 @@ from .paginator import Data
 from .image import Image
 
 if TYPE_CHECKING:
-    from .studio import Studio
     from .character import Character
 
 __all__ = (

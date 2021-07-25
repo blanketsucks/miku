@@ -10,6 +10,7 @@ from .user import User
 from .studio import Studio
 from .staff import Staff
 from .statistics import SiteStatistics
+from .image import Image
 
 def _get_event_loop(loop=None) -> asyncio.AbstractEventLoop:
     if loop:
@@ -24,13 +25,13 @@ def _get_event_loop(loop=None) -> asyncio.AbstractEventLoop:
         return asyncio.get_event_loop()
 
 __all__ = (
-    'AnilistClient',
+    'AsyncAnilistClient',
 )
 
-class AnilistClient:
+class AsyncAnilistClient:
     def __init__(self, loop: Optional[asyncio.AbstractEventLoop]=None, session: aiohttp.ClientSession=None) -> None:
         """
-        AnilistClient constructor.
+        AsyncAnilistClient constructor.
 
         Args:
             loop: An optional argument defining the event loop used for the client's requests.
@@ -39,8 +40,11 @@ class AnilistClient:
         self.loop = _get_event_loop(loop)
         self.http = HTTPHandler(loop, session)
 
+    async def close(self):
+        return await self.http.close()
+
     @classmethod
-    def from_access_token(cls, access_token: str, **kwargs) -> 'AnilistClient':
+    def from_access_token(cls, access_token: str, **kwargs) -> 'AsyncAnilistClient':
         """
         Creates a client from an access token.
         """
@@ -53,7 +57,7 @@ class AnilistClient:
         return self
 
     async def __aexit__(self, *exc):
-        await self.http.close()
+        await self.close()
 
     async def fetch_site_statistics(self) -> SiteStatistics:
         """
@@ -73,7 +77,7 @@ class AnilistClient:
             A [User](./user.md) object.
         """
         data = await self.http.get_user(name)
-        return User(data['data']['User'], self.http.session)
+        return User(data['data']['User'], self.http.session, Image)
 
     async def fetch_media(self, name: str, *, type: Optional[str]=None) -> Media:
         """
@@ -83,7 +87,7 @@ class AnilistClient:
             A [Media](./media.md) object.
         """
         data = await self.http.get_media(name, type)
-        return Media(data['data']['Media'], self.http.session)
+        return Media(data['data']['Media'], self.http.session, Image)
 
     async def fetch_anime(self, name: str) -> Anime:
         """
@@ -93,7 +97,7 @@ class AnilistClient:
             A [Media](./media.md) object.
         """
         data = await self.http.get_anime(name)
-        return Anime(data['data']['Media'], self.http.session)
+        return Anime(data['data']['Media'], self.http.session, Image)
 
     async def fetch_manga(self, name: str) -> Manga:
         """
@@ -103,7 +107,7 @@ class AnilistClient:
             A [Media](./media.md) object.
         """
         data = await self.http.get_manga(name)
-        return Manga(data['data']['Media'], self.http.session)
+        return Manga(data['data']['Media'], self.http.session, Image)
 
     async def fetch_character(self, name: str) -> Character:
         """
@@ -113,7 +117,7 @@ class AnilistClient:
             A [Character](./character.md) object.
         """
         data = await self.http.get_character(name)
-        return Character(data['data']['Character'], self.http.session)
+        return Character(data['data']['Character'], self.http.session, Image)
 
     async def fetch_studio(self, name: str) -> Studio:
         """
@@ -123,7 +127,7 @@ class AnilistClient:
             A [Studio](./studio.md) object.
         """
         data = await self.http.get_studio(name)
-        return Studio(data['data']['Studio'], self.http.session)
+        return Studio(data['data']['Studio'], self.http.session, Image)
 
     async def fetch_staff(self, name: str) -> Staff:
         """
@@ -133,11 +137,11 @@ class AnilistClient:
             A [Staff](./staff.md) object.
         """
         data = await self.http.get_staff(name)
-        return Staff(data['data']['Staff'], self.http.session)
+        return Staff(data['data']['Staff'], self.http.session, Image)
 
     def users(self, name: str, *, per_page: int=3, page: int=1) -> Paginator[User]:
         """
-        The same as [AnilistClient.media](./client.md#miku.client.AnilistClient.media) but 
+        The same as [AsyncAnilistClient.media](./client.md#miku.client.AsyncAnilistClient.media) but 
         the [Page](./page.md) retreived through the [Paginator](./paginator.md) returns a [User](./user.md) object.
 
         Args:
@@ -168,7 +172,7 @@ class AnilistClient:
 
     def animes(self, name: str, *, per_page: int=3, page: int=1) -> Paginator[Anime]:
         """
-        The same as [AnilistClient.media](./client.md#miku.client.AnilistClient.media) 
+        The same as [AsyncAnilistClient.media](./client.md#miku.client.AsyncAnilistClient.media) 
         but the [Page](./page.md) retreived through the [Paginator](./paginator.md) returns an [Anime](./media.md) object.
 
         Args:
@@ -183,7 +187,7 @@ class AnilistClient:
 
     def mangas(self, name: str, *, per_page: int=3, page: int=1) -> Paginator[Manga]:
         """
-        The same as [AnilistClient.media](./client.md#miku.client.AnilistClient.media) 
+        The same as [AsyncAnilistClient.media](./client.md#miku.client.AsyncAnilistClient.media) 
         but the [Page](./page.md) retreived through the [Paginator](./paginator.md) returns a [Manga](./media.md) object.
 
         Args:
@@ -198,7 +202,7 @@ class AnilistClient:
 
     def characters(self, name: str, *, per_page: int=3, page: int=1) -> Paginator[Character]:
         """
-        The same as [AnilistClient.media](./client.md#miku.client.AnilistClient.media) but
+        The same as [AsyncAnilistClient.media](./client.md#miku.client.AsyncAnilistClient.media) but
         the [Page](./page.md) retreived through the [Paginator](./paginator.md) returns a [Character](./character.md) object.
 
         Args:

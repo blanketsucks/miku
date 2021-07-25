@@ -1,1 +1,1 @@
-::: miku.AnilistClient
+::: miku.AsyncAnilistClient

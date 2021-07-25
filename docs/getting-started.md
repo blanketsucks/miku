@@ -1,9 +1,16 @@
 # Getting Started
 
 ## Installation
+**Python 3.8 is required for the installation.**
 
-Support for installation via `pip` is currently unsupported.
+Installation is done via git:
+```shell
+# Linux/MacOS
+python3 -m pip install -U git+https://github.com/blanketsucks/miku
 
+# Windows
+py -3 -m pip install -U git+https://github.com/blanketsucks/miku
+```
 -----
 
 ## Basic Examples
@@ -14,7 +21,7 @@ import miku
 import asyncio
 
 async def main():
-    async with miku.AnilistClient() as client:
+    async with miku.AsyncAnilistClient() as client:
         anime = await client.fetch_anime('Gurren Lagann')
         print(anime)
 
@@ -27,7 +34,7 @@ import miku
 import asyncio
 
 async def main():
-    async with miku.AnilistClient() as client:
+    async with miku.AsyncAnilistClient() as client:
         manga = await client.fetch_manga('Bakemonogatari')
         print(manga)
 
@@ -40,7 +47,7 @@ import miku
 import asyncio
 
 async def main():
-    async with miku.AnilistClient() as client:
+    async with miku.AsyncAnilistClient() as client:
         character = await client.fetch_character('Miku Nakano')
         print(character)
 
@@ -56,7 +63,7 @@ import aiohttp
 async def main():
     session = aiohttp.ClientSession()
     
-    async with miku.AnilistClient.from_session(session) as client:
+    async with miku.AsyncAnilistClient.from_session(session) as client:
         anime = await client.fetch_anime('Kanojo mo Kanojo')
         print(anime)
 
@@ -69,7 +76,7 @@ import miku
 import asyncio
 
 async def main():
-    async with miku.AnilistClient() as client:
+    async with miku.AsyncAnilistClient() as client:
         animes = await client.animes('5-toubun no Hanayome')
         print(animes)
 
@@ -82,7 +89,7 @@ import miku
 import asyncio
 
 async def main():
-    async with miku.AnilistClient() as client:
+    async with miku.AsyncAnilistClient() as client:
         paginator = client.animes('5-toubun no Hanayome')
 
         async for page in paginator:

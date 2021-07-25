@@ -27,7 +27,7 @@ class Data(list[T]):
 
         Example:
             ```py
-            async with miku.AnilistClient() as client:
+            async with miku.AsyncAnilistClient() as client:
                 anime = await client.fetch_anime('Bakemonogatari')
                 character = anime.characters.find(lambda character: character.name.full == 'Episode')
                 print(character)
@@ -46,7 +46,7 @@ class Data(list[T]):
 
         Example:
             ```py
-            async with miku.AnilistClient() as client:
+            async with miku.AsyncAnilistClient() as client:
                 medias = await client.media('5-toubun no hanayome')
                 async for media in medias.filter(lambda media: media.format == miku.MediaFormat.TV):
                     print(media)
@@ -68,7 +68,7 @@ class Data(list[T]):
 
         Example:
             ```py
-            async with miku.AnilistClient() as client:
+            async with miku.AsyncAnilistClient() as client:
                 anime = await client.fetch_anime('Bakemonogatari')
                 character = anime.characters.get(name_full='Episode')
                 print(character)

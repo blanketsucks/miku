@@ -1,7 +1,6 @@
 import asyncio
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict
 import aiohttp
-from aiohttp.helpers import NO_EXTENSIONS
 
 from .query import Query, QueryFields, QueryOperation
 from .fields import *
@@ -270,7 +269,7 @@ class HTTPHandler:
         else:
             cls = Manga
 
-        return Paginator(self, 'media', query, variables, cls)  
+        return Paginator(self, 'media', query, variables, cls, Image)  
 
     def get_animes(self, search: str, *, per_page: int=5, page: int=0):
         return self.get_medias(search, 'ANIME', per_page=per_page, page=page)

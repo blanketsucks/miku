@@ -14,5 +14,5 @@ setuptools.setup(
         'requests',
         'aiohttp',
     ],
-    python_requires='>=3.7',
+    python_requires='>=3.8',
 )

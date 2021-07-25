@@ -13,19 +13,21 @@ from miku.staff import Staff
 from miku.statistics import SiteStatistics
 
 __all__ = (
-    'AnilistClient',
+    'AsyncAnilistClient',
 )
 
 class SyncAnilistClient:
     def __init__(self, session: requests.Session=None) -> None:
         """
-        AnilistClient constructor.
+        SyncAnilistClient constructor.
 
         Args:
-            loop: An optional argument defining the event loop used for the client's requests.
             session: An optional argument defining the session used to send requests with.
         """
         self.http = SyncHTTPHandler(session)
+
+    def close(self):
+        return self.http.close()
 
     @classmethod
     def from_access_token(cls, access_token: str, **kwargs) -> 'SyncAnilistClient':
@@ -41,7 +43,7 @@ class SyncAnilistClient:
         return self
 
     def __exit__(self, *exc):
-        self.http.close()
+        self.close()
 
     def fetch_site_statistics(self) -> SiteStatistics:
         """
@@ -125,7 +127,7 @@ class SyncAnilistClient:
 
     def users(self, name: str, *, per_page: int=3, page: int=1) -> Paginator[User]:
         """
-        The same as [AnilistClient.media](./client.md#miku.client.AnilistClient.media) but 
+        The same as [AsyncAnilistClient.media](./client.md#miku.client.AsyncAnilistClient.media) but 
         the [Page](./page.md) retreived through the [Paginator](./paginator.md) returns a [User](./user.md) object.
 
         Args:
@@ -156,7 +158,7 @@ class SyncAnilistClient:
 
     def animes(self, name: str, *, per_page: int=3, page: int=1) -> Paginator[Anime]:
         """
-        The same as [AnilistClient.media](./client.md#miku.client.AnilistClient.media) 
+        The same as [AsyncAnilistClient.media](./client.md#miku.client.AsyncAnilistClient.media) 
         but the [Page](./page.md) retreived through the [Paginator](./paginator.md) returns an [Anime](./media.md) object.
 
         Args:
@@ -171,7 +173,7 @@ class SyncAnilistClient:
 
     def mangas(self, name: str, *, per_page: int=3, page: int=1) -> Paginator[Manga]:
         """
-        The same as [AnilistClient.media](./client.md#miku.client.AnilistClient.media) 
+        The same as [AsyncAnilistClient.media](./client.md#miku.client.AsyncAnilistClient.media) 
         but the [Page](./page.md) retreived through the [Paginator](./paginator.md) returns a [Manga](./media.md) object.
 
         Args:
@@ -186,7 +188,7 @@ class SyncAnilistClient:
 
     def characters(self, name: str, *, per_page: int=3, page: int=1) -> Paginator[Character]:
         """
-        The same as [AnilistClient.media](./client.md#miku.client.AnilistClient.media) but
+        The same as [AsyncAnilistClient.media](./client.md#miku.client.AsyncAnilistClient.media) but
         the [Page](./page.md) retreived through the [Paginator](./paginator.md) returns a [Character](./character.md) object.
 
         Args:
