@@ -238,9 +238,6 @@ class Paginator(Generic[T]):
         """
         Collects all the fetchable pages and returns them as a list
 
-        Args:
-            get_page_data: A bool indiacting whether to get the data from the fetched page or not.
-
         Returns:
             A list containing [Page](./page.md) objects.   
         """

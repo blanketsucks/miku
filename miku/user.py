@@ -109,7 +109,7 @@ class UserFavourites:
     def anime(self) -> Data[Anime]:
         """
         Returns:
-            The [Media](./medias.md)s that are in this user's favourites.
+            The [Media](./media.md)s that are in this user's favourites.
         """
         animes = self._payload['anime']['nodes']
         return Data([Anime(anime, self._session) for anime in animes])

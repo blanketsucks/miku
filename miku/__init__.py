@@ -1,5 +1,6 @@
 
 __author__ = 'blanketsucks'
+__version__ = '0.1'
 
 from .client import *
 from .media import *

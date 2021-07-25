@@ -1,16 +1,12 @@
-# Miku
+# Getting Started
 
-An Unofficial AniList python API wrapper.
-
-## Getting Started
-
-### Installation
+## Installation
 
 Support for installation via `pip` is currently unsupported.
 
 -----
 
-### Basic Examples
+## Basic Examples
 
 Fetching an anime
 ```py
@@ -108,5 +104,5 @@ with miku.SyncAnilistClient() as client:
 
 -----
 
-### Note
+## Note
 The synchronous client does not add any new methods, it's just simply a sync version of the async client, thus, it's not documented.
