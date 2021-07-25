@@ -136,8 +136,9 @@ class Media:
         synonyms: Alternative titles of the media.
         description: The description of this media.
     """
-    def __init__(self, payload: Dict[str, Any], session: aiohttp.ClientSession) -> None:
+    def __init__(self, payload: Dict[str, Any], session: aiohttp.ClientSession, cls) -> None:
         self._payload = payload
+        self._cls = cls
         self._session = session
 
         self.url: str = self._payload['siteUrl']
@@ -248,7 +249,7 @@ class Media:
             an [Image](./media) object.
         """
 
-        return Image(self._session, self._payload['bannerImage'])
+        return self._cls(self._session, self._payload['bannerImage'])
 
     @property
     def cover_image(self) -> Image:
@@ -256,7 +257,7 @@ class Media:
         Returns:
             an [Image](./media) object.
         """
-        return Image(self._session, self._payload['coverImage'])
+        return self._cls(self._session, self._payload['coverImage'])
 
     @property
     def characters(self) -> Data[Character]:
@@ -267,7 +268,7 @@ class Media:
         from .character import Character
 
         characters = self._payload['characters']['nodes']
-        return Data([Character(data, self._session) for data in characters])
+        return Data([Character(data, self._session, self._cls) for data in characters])
 
 class Anime(Media):
     pass

@@ -15,8 +15,9 @@ class Studio:
         url: The url for the studio page on the AniList website.
         favourites: The amount of users who have favourited the studio
     """
-    def __init__(self, payload, session) -> None:
+    def __init__(self, payload, session, cls) -> None:
         self._payload = payload
+        self._cls = cls
         self._session = session
 
         self.id: int = payload['id']
@@ -36,4 +37,4 @@ class Studio:
         from .media import _get_media
 
         medias = self._payload['media']['nodes']
-        return Data([_get_media(media)(media, self._session) for media in medias])
+        return Data([_get_media(media)(media, self._session, self._cls) for media in medias])

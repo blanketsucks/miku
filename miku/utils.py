@@ -1,11 +1,19 @@
-from typing import Dict, TypeVar, Callable, Optional
+from typing import Any, AsyncIterator, Coroutine, Dict, Iterable, TypeVar, Callable, Optional, List, Union
 from operator import attrgetter
+import asyncio
 
 T = TypeVar('T')
 
+async def maybe_coroutine(f: Callable[..., T], *args: Any, **kwargs: Any) -> T:
+    ret = f(*args, **kwargs)
+    if asyncio.iscoroutine(ret):
+        return await ret
+
+    return ret
+
 class Data(list[T]):
     """
-    A subclass of `list` implementing 2 helper methods.
+    A subclass of `list` implementing 3 helper methods.
     """
     def find(self, check: Callable[[T], bool]) -> Optional[T]:
         """
@@ -28,6 +36,25 @@ class Data(list[T]):
         for data in self:
             if check(data):
                 return data
+
+    async def filter(self, check: Callable[[T], Union[Coroutine[Any, Any, bool], bool]]) -> AsyncIterator[T]:
+        """
+        This function yields all elements meeting the `check` condition.
+
+        Args:
+            check: A callable (can be a coroutine function) which takes in a single parameter and returns a `bool.`
+
+        Example:
+            ```py
+            async with miku.AnilistClient() as client:
+                medias = await client.media('5-toubun no hanayome')
+                async for media in medias.filter(lambda media: media.format == miku.MediaFormat.TV):
+                    print(media)
+            ```
+        """
+        for element in self:
+            if await maybe_coroutine(check, element):
+                yield element
 
     def get(self, **attrs: Dict):
         """
@@ -58,3 +85,7 @@ class Data(list[T]):
 def remove_docstring(f):
     f.__doc__ = ''
     return f
+
+async def map(func: Callable[[T], Coroutine[Any, Any, Any]], iterable: Iterable[T]) -> AsyncIterator:
+    for iterable in iterable:
+        yield await func(iterable)

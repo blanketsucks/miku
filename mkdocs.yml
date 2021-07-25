@@ -10,8 +10,6 @@ theme:
 
 nav:
   - Home: index.md
-  - Installation: installation.md
-  - Basic Examples: basic-example.md
   - API Reference:
     - Client: API-Reference/client.md
     - Media: API-Reference/media.md
@@ -24,6 +22,7 @@ nav:
     - CharacterName: API-Reference/character-name.md
     - CharacterBirthdate: API-Reference/character-birthdate.md
     - User: API-Reference/user.md
+    - UserFavourites: API-Reference/user-favouries.md
     - UserOptions: API-Reference/user-options.md
     - UserTitleLanguage: API-Reference/user-title-language.md
     - UserNotificationOption: API-Reference/user-notification.md

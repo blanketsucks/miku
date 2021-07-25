@@ -30,8 +30,9 @@ class Staff:
         home_town: The persons birthplace or hometown.
         url: The url for the staff page on the AniList website.
     """
-    def __init__(self, payload, session) -> None:
+    def __init__(self, payload, session, cls) -> None:
         self._payload = payload
+        self._cls = cls
         self._session = session
 
         self.id: int = self._payload['id']
@@ -61,7 +62,7 @@ class Staff:
         Returns:
             An [Image](image.md) object.
         """
-        return Image(self._session, self._payload['image'])
+        return self._cls(self._session, self._payload['image'])
 
     @property
     def birth(self) -> StaffBirthdate:
@@ -88,4 +89,4 @@ class Staff:
             A [Data](./data.md) object.
         """
         characters = self._payload['characters']['nodes']
-        return utils.Data([Character(character, self._session) for character in characters])
+        return utils.Data([Character(character, self._session, self._cls) for character in characters])

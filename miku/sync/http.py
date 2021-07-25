@@ -1,85 +1,60 @@
-import asyncio
-from typing import Any, Dict, Optional, Union
-import aiohttp
-from aiohttp.helpers import NO_EXTENSIONS
+from typing import Any, Dict
+import requests
+import time
 
-from .query import Query, QueryFields, QueryOperation
-from .fields import *
-from .media import Anime, Manga, Media
-from .character import Character
 from .paginator import Paginator
-from .user import User
 from .image import Image
-from .errors import AniListServerError, HTTPException, mapping
 
-__all__ = (
-    'HTTPHandler',
-)
+from miku.errors import mapping, HTTPException, AniListServerError
+from miku.fields import *
+from miku.query import Query, QueryFields, QueryOperation
+from miku.media import Media, Manga, Anime
+from miku.user import User
+from miku.character import Character
 
-class HTTPHandler:
+class SyncHTTPHandler:
     URL = 'https://graphql.anilist.co'
 
-    def __init__(self, loop: asyncio.AbstractEventLoop, session: aiohttp.ClientSession=None) -> None:
-        if session:
-            ret = 'Expected an aiohttp.ClientSession instance but got {0.__class__.__name__!r} instead'
-            raise TypeError(ret.format(session))       
-
-        self.session = session
-        self.loop = loop
-        self.token = None
-
-    async def create_session(self):
-        self.session = session = aiohttp.ClientSession(loop=self.loop)
-        return session
-
-    async def request(self, query: str, variables: Dict[str, Any]):
-        headers = {
+    def __init__(self, session: requests.Session=None) -> None:
+        self.session = session or requests.Session()
+        self.session.headers.update({
             'Content-Type': 'application/json',
             'Accept': 'application/json',
-        }
+        })
 
-        if self.token:
-            headers['Authorization'] = 'Bearer ' + self.token
+        self.token = None
 
-        url = self.URL
+    def close(self):
+        self.session.close()
 
-        session = self.session
-        if not session:
-            session = await self.create_session()
+    def request(self, query: str, variables: Dict[str, Any]):
+        if self.token is not None:
+            self.session.headers['Authorization'] = 'Bearer ' + self.token
 
         payload = {
             'query': query,
-            'variables': variables
+            'variables': variables,
         }
 
         for retry in range(5):
-            async with session.post(url, json=payload, headers=headers) as response:
-                try:
-                    data = await response.json()
-                except aiohttp.ContentTypeError:
-                    continue
+            response = self.session.post(self.URL, json=payload)
+            data = response.json()
 
-                if response.status == 429:
-                    retry_after = response.headers['Retry-After']
-                    await asyncio.sleep(int(retry_after))
+            if response.status_code == 429:
+                retry_after = int(response.headers['Retry-After'])
+                time.sleep(retry_after)
 
-                    continue
-                
-                if data.get('errors'):
-                    cls = mapping.get(data['errors'][0]['status'], HTTPException)
-                    raise cls(data)
+                continue
 
-                return data
+            if data.get('errors'):
+                cls = mapping.get(data['errors'][0]['status'], HTTPException)
+                raise cls(data)
+
+            return data
 
         raise AniListServerError('Could not fullfil the request because of some internal server error')
 
-    async def close(self):
-        if not self.session:
-            return None
-
-        return await self.session.close()
-
-    async def get_user(self, search: str):
+    def get_user(self, search: str):
         operation = QueryOperation(
             type="query", 
             variables={"$search": "String"}
@@ -110,9 +85,9 @@ class HTTPHandler:
             'search': search,
         }
 
-        return await self.request(query, variables)
+        return self.request(query, variables)
 
-    async def get_media(self, search: str, type: str=None):
+    def get_media(self, search: str, type: str=None):
         operation = QueryOperation(
             type="query", 
             variables={"$search": "String"}
@@ -135,15 +110,15 @@ class HTTPHandler:
             'search': search,
         }
 
-        return await self.request(query, variables)
+        return self.request(query, variables)
 
-    async def get_anime(self, search: str):
-        return await self.get_media(search, 'ANIME')
+    def get_anime(self, search: str):
+        return self.get_media(search, 'ANIME')
 
-    async def get_manga(self, search: str):
-        return await self.get_media(search, 'MANGA')
+    def get_manga(self, search: str):
+        return self.get_media(search, 'MANGA')
 
-    async def get_studio(self, search: str):
+    def get_studio(self, search: str):
         operation = QueryOperation(
             type="query", 
             variables={"$search": "String"}
@@ -163,9 +138,9 @@ class HTTPHandler:
             'search': search,
         }
 
-        return await self.request(query, variables)
+        return self.request(query, variables)
 
-    async def get_staff(self, search: str):
+    def get_staff(self, search: str):
         operation = QueryOperation(
             type="query", 
             variables={"$search": "String"}
@@ -185,9 +160,9 @@ class HTTPHandler:
             'search': search,
         }
 
-        return await self.request(query, variables)
+        return self.request(query, variables)
 
-    async def get_site_statisics(self):
+    def get_site_statisics(self):
         operation = QueryOperation(
             type='query',
             variables={}
@@ -201,7 +176,7 @@ class HTTPHandler:
         query = Query(operation, fields)
         query = query.build()
 
-        return await self.request(query, {})
+        return self.request(query, {})
 
     def get_users(self, search: str, *, per_page: int=5, page: int=0):
         operation = QueryOperation(
@@ -270,7 +245,7 @@ class HTTPHandler:
         else:
             cls = Manga
 
-        return Paginator(self, 'media', query, variables, cls)  
+        return Paginator(self, 'media', query, variables, cls, Image)  
 
     def get_animes(self, search: str, *, per_page: int=5, page: int=0):
         return self.get_medias(search, 'ANIME', per_page=per_page, page=page)
@@ -302,7 +277,7 @@ class HTTPHandler:
 
         return Paginator(self, 'characters', query, variables, Character, Image)
 
-    async def get_character(self, search: str):
+    def get_character(self, search: str):
         operation = QueryOperation(
             type="query", 
             variables={"$search": "String"}
@@ -322,4 +297,4 @@ class HTTPHandler:
             'search': search,
         }
 
-        return await self.request(query, variables)
+        return self.request(query, variables)

@@ -3,21 +3,19 @@ from __future__ import annotations
 from typing import (
     Any,
     Dict, 
-    Generator, 
     Generic, 
     List, 
     Optional, 
     TYPE_CHECKING, 
     Type, 
     TypeVar, 
-    Union
 )
 import aiohttp
 
 from .utils import Data
 
 if TYPE_CHECKING:
-    from .http import HTTPHandler
+    from .http import SyncHTTPHandler
 
 T = TypeVar('T')
 
@@ -131,7 +129,7 @@ class Page(Data[T]):
         return self.model(payload=data, session=self.session)
 
 class Paginator(Generic[T]):
-    def __init__(self, http: HTTPHandler, type: str, query: str, vars: Dict[str, Any], model: Type, image_cls) -> None:
+    def __init__(self, http: SyncHTTPHandler, type: str, query: str, vars: Dict[str, Any], model: Type, image_cls) -> None:
         self.http = http
         self.cls = image_cls
         self.query = query
@@ -156,11 +154,11 @@ class Paginator(Generic[T]):
 
         return self.pages.get(page)
 
-    async def fetch_page(self, page: int) -> Optional[Page[T]]:
+    def fetch_page(self, page: int) -> Optional[Page[T]]:
         vars = self.vars.copy()
         vars['page'] = page
 
-        json = await self.http.request(self.query, vars)
+        json = self.http.request(self.query, vars)
         data = json['data']
 
         if not data:
@@ -168,7 +166,7 @@ class Paginator(Generic[T]):
 
         return Page(self.type, json, self.model, self.http.session, self.cls)
 
-    async def next(self) -> Optional[Page[T]]:
+    def next(self) -> Optional[Page[T]]:
         """
         Fetches the next page.
 
@@ -181,7 +179,7 @@ class Paginator(Generic[T]):
 
         self.vars['page'] = self.next_page
 
-        json = await self.http.request(self.query, self.vars)
+        json = self.http.request(self.query, self.vars)
         data = json['data']
         if not data:
             return None
@@ -197,14 +195,14 @@ class Paginator(Generic[T]):
 
         return page
 
-    async def current(self) -> Optional[Page[T]]:
+    def current(self) -> Optional[Page[T]]:
         """
         Fetches the current page.
 
         Returns:
             a [Page](./page.md) object or None.
         """
-        json = await self.http.request(self.query, self.vars)
+        json = self.http.request(self.query, self.vars)
         data = json['data']
 
         if not data:
@@ -212,7 +210,7 @@ class Paginator(Generic[T]):
 
         return Page(self.type, json, self.model, self.http.session, self.cls)
 
-    async def previous(self) -> Optional[Page[T]]:
+    def previous(self) -> Optional[Page[T]]:
         """
         Fetches the previous page.
 
@@ -226,7 +224,7 @@ class Paginator(Generic[T]):
             page = 0
 
         vars['page'] = page
-        json = await self.http.request(self.query, vars)
+        json = self.http.request(self.query, vars)
         data = json['data']
         
         if not data:
@@ -234,7 +232,7 @@ class Paginator(Generic[T]):
 
         return Page(self.type, json, self.model, self.http.session, self.cls)
 
-    async def collect(self) -> List[Page[T]]:
+    def collect(self) -> List[Page[T]]:
         """
         Collects all the fetchable pages and returns them as a list
 
@@ -248,7 +246,7 @@ class Paginator(Generic[T]):
         pages = []
 
         while True:
-            page = await self.next()
+            page = self.next()
             if not page:
                 break
 
@@ -256,23 +254,20 @@ class Paginator(Generic[T]):
 
         return pages
 
-    def __await__(self) -> Generator[Any, None, Data[T]]:
-        return self.collect().__await__()
-
-    def __aiter__(self) -> Paginator[T]:
+    def __iter__(self) -> Paginator[T]:
         """
         Returns:
             This same [Paginator](./paginator.md) object.
         """
         return self
 
-    async def __anext__(self) -> Page[T]:
+    def __next__(self) -> Page[T]:
         """
         Returns:
             The next [Page](./page.md).
         """
-        data = await self.next()
+        data = self.next()
         if not data:
-            raise StopAsyncIteration
+            raise StopIteration
 
         return data

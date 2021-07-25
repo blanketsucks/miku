@@ -1,34 +1,23 @@
-import aiohttp
-import asyncio
+import requests
 from typing import Optional
 
-from .http import HTTPHandler
-from .media import Anime, Media, Manga
+from .http import SyncHTTPHandler
+from .image import Image
 from .paginator import Paginator
-from .character import Character
-from .user import User
-from .studio import Studio
-from .staff import Staff
-from .statistics import SiteStatistics
 
-def _get_event_loop(loop=None) -> asyncio.AbstractEventLoop:
-    if loop:
-        if not isinstance(loop, asyncio.BaseEventLoop):
-            raise TypeError('Invalid type for loop argument')
-
-        return loop
-
-    try:
-        return asyncio.get_running_loop()
-    except RuntimeError:
-        return asyncio.get_event_loop()
+from miku.media import Anime, Media, Manga
+from miku.character import Character
+from miku.user import User
+from miku.studio import Studio
+from miku.staff import Staff
+from miku.statistics import SiteStatistics
 
 __all__ = (
     'AnilistClient',
 )
 
-class AnilistClient:
-    def __init__(self, loop: Optional[asyncio.AbstractEventLoop]=None, session: aiohttp.ClientSession=None) -> None:
+class SyncAnilistClient:
+    def __init__(self, session: requests.Session=None) -> None:
         """
         AnilistClient constructor.
 
@@ -36,11 +25,10 @@ class AnilistClient:
             loop: An optional argument defining the event loop used for the client's requests.
             session: An optional argument defining the session used to send requests with.
         """
-        self.loop = _get_event_loop(loop)
-        self.http = HTTPHandler(loop, session)
+        self.http = SyncHTTPHandler(session)
 
     @classmethod
-    def from_access_token(cls, access_token: str, **kwargs) -> 'AnilistClient':
+    def from_access_token(cls, access_token: str, **kwargs) -> 'SyncAnilistClient':
         """
         Creates a client from an access token.
         """
@@ -49,71 +37,71 @@ class AnilistClient:
 
         return self
 
-    async def __aenter__(self):
+    def __enter__(self):
         return self
 
-    async def __aexit__(self, *exc):
-        await self.http.close()
+    def __exit__(self, *exc):
+        self.http.close()
 
-    async def fetch_site_statistics(self) -> SiteStatistics:
+    def fetch_site_statistics(self) -> SiteStatistics:
         """
         Fetches site statistics.
 
         Returns:
             A [SiteStatistics][./site-statistics.md] object.
         """
-        data = await self.http.get_site_statisics()
+        data = self.http.get_site_statisics()
         return SiteStatistics(data['data']['SiteStatistics'])
 
-    async def fetch_user(self, name: str) -> User:
+    def fetch_user(self, name: str) -> User:
         """
         Fetches a user.
 
         Returns:
             A [User](./user.md) object.
         """
-        data = await self.http.get_user(name)
-        return User(data['data']['User'], self.http.session)
+        data = self.http.get_user(name)
+        return User(data['data']['User'], self.http.session, Image)
 
-    async def fetch_media(self, name: str, *, type: Optional[str]=None) -> Media:
+    def fetch_media(self, name: str, *, type: Optional[str]=None) -> Media:
         """
         Fetches a media.
 
         Returns:
             A [Media](./media.md) object.
         """
-        data = await self.http.get_media(name, type)
-        return Media(data['data']['Media'], self.http.session)
+        data = self.http.get_media(name, type)
+        return Media(data['data']['Media'], self.http.session, Image)
 
-    async def fetch_anime(self, name: str) -> Anime:
+    def fetch_anime(self, name: str) -> Anime:
         """
         Fetches an anime.
 
         Returns:
             A [Media](./media.md) object.
         """
-        data = await self.http.get_anime(name)
-        return Anime(data['data']['Media'], self.http.session)
+        data = self.http.get_anime(name)
+        return Anime(data['data']['Media'], self.http.session, Image)
 
-    async def fetch_manga(self, name: str) -> Manga:
+    def fetch_manga(self, name: str) -> Manga:
         """
         Fetches a manga.
 
         Returns:
             A [Media](./media.md) object.
         """
-        data = await self.http.get_manga(name)
-        return Manga(data['data']['Media'], self.http.session)
+        data = self.http.get_manga(name)
+        return Manga(data['data']['Media'], self.http.session, Image)
 
-    async def fetch_character(self, name: str) -> Character:
+    def fetch_character(self, name: str) -> Character:
         """
         Fetches a character.
 
         Returns:
             A [Character](./character.md) object.
         """
-        data = await self.http.get_character(name)
-        return Character(data['data']['Character'], self.http.session)
+        data = self.http.get_character(name)
+        return Character(data['data']['Character'], self.http.session, Image)
 
     async def fetch_studio(self, name: str) -> Studio:
         """
@@ -122,17 +110,17 @@ class AnilistClient:
         Returns:
             A [Studio](./studio.md) object.
         """
-        data = await self.http.get_studio(name)
-        return Studio(data['data']['Studio'], self.http.session)
+        data = self.http.get_studio(name)
+        return Studio(data['data']['Studio'], self.http.session, Image)
 
-    async def fetch_staff(self, name: str) -> Staff:
+    def fetch_staff(self, name: str) -> Staff:
         """
         Fetches a staff
 
         Returns:
             A [Staff](./staff.md) object.
         """
-        data = await self.http.get_staff(name)
+        data = self.http.get_staff(name)
         return Staff(data['data']['Staff'], self.http.session)
 
     def users(self, name: str, *, per_page: int=3, page: int=1) -> Paginator[User]:
@@ -209,6 +197,3 @@ class AnilistClient:
             A [Paginator](./paginator.md) object.
         """
         return self.http.get_characters(name, per_page=per_page, page=page)
-
-    def studios(self, name: str, *, per_page: int=3, page: int=1) -> Paginator[Studio]:
-        pass

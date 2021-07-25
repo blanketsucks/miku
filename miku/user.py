@@ -1,9 +1,12 @@
 from enum import Enum
-from typing import List, Optional
+from typing import List, Optional, Type
 
 from .image import Image
 from .media import Manga, Anime
 from .character import Character
+from .utils import Data
+from .staff import Staff
+from .studio import Studio
 
 __all__ = (
     'UserTitleLanguage',
@@ -103,19 +106,49 @@ class UserFavourites:
         self._session = session
 
     @property
-    def anime(self) -> List[Anime]:
+    def anime(self) -> Data[Anime]:
+        """
+        Returns:
+            The [Media](./medias.md)s that are in this user's favourites.
+        """
         animes = self._payload['anime']['nodes']
-        return [Anime(anime, self._session) for anime in animes]
+        return Data([Anime(anime, self._session) for anime in animes])
 
     @property
-    def manga(self) -> List[Manga]:
+    def manga(self) -> Data[Manga]:
+        """
+        Returns:
+            The [Media](./media.md)s objects that are in this user's favourites.
+        """
         mangas = self._payload['manga']['nodes']
-        return [Anime(manga, self._session) for manga in mangas]
+        return Data([Manga(manga, self._session) for manga in mangas])
 
     @property
-    def characters(self) -> List[Character]:
+    def characters(self) -> Data[Character]:
+        """
+        Returns:
+            The [Character](./character.md)s objects that are in this user's favourites.
+        """
         characters = self._payload['characters']['nodes']
-        return [Character(character, self._session) for character in characters]
+        return Data([Character(character, self._session) for character in characters])
+
+    @property
+    def studios(self) -> Data[Studio]:
+        """
+        Returns:
+            The [Studio](./studio.md)s objects that are in this user's favourites.
+        """
+        studios = self._payload['studios']['nodes']
+        return Data([Studio(studio, self._session) for studio in studios])
+
+    @property
+    def staff(self) -> Data[Staff]:
+        """
+        Returns:
+            The [Staff](./staff.md)s objects that are in this user's favourites.
+        """
+        staff = self._payload['staff']['nodes']
+        return Data([Staff(staff, self._session) for staff in staff])
 
 class User:
     """
@@ -124,9 +157,10 @@ class User:
         id: The id of the user.
         url: The user profile's URL. 
     """
-    def __init__(self, payload, session) -> None:
+    def __init__(self, payload, session, cls) -> None:
         self._payload = payload
         self._session = session
+        self._cls = cls
 
         self.name: str = self._payload['name']
         self.id: int = self._payload['id']
@@ -141,7 +175,7 @@ class User:
         Returns:
             The avatar of the user as an [Image](./image.md) object.
         """
-        return Image(self._session, self._payload['avatar'])
+        return self._cls(self._session, self._payload['avatar'])
 
     @property
     def banner(self) -> Optional[Image]:
@@ -152,7 +186,7 @@ class User:
         if not self._payload['bannerImage']:
             return None
 
-        return Image(self._session, self._payload['bannerImage'])
+        return self._cls(self._session, self._payload['bannerImage'])
 
     @property
     def options(self) -> UserOptions:
@@ -163,5 +197,9 @@ class User:
         return UserOptions(self._payload['options'])
 
     @property
-    def favourites(self):
+    def favourites(self) -> UserFavourites:
+        """
+        Returns:
+            A [UserFavourites](./user-favourites.md) object.
+        """
         return UserFavourites(self._payload['favourites'], self._session)

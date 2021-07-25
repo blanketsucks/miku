@@ -44,7 +44,11 @@ class BadRequest(HTTPException):
 class Forbidden(HTTPException):
     status = 403
 
+class AniListServerError(HTTPException):
+    pass
+
 mapping: Dict[int, Type[HTTPException]] = {
     400: BadRequest,
-    403: Forbidden
+    403: Forbidden,
+    500: AniListServerError
 }
