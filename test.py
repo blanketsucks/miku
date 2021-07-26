@@ -3,24 +3,14 @@ import miku
 
 def sync_client():
     client = miku.SyncAnilistClient()
-    paginator = client.animes('Bakemonogatari')
-
-    for page in paginator:
-        for media in page:
-            print(media.title)
-
-    client.close()
+    animes = client.animes('Bakemonogatari').collect()
+    print(animes)
 
 async def async_client():
     client = miku.AsyncAnilistClient()
-    paginator = client.medias('Bakemonogatari')
+    medias = await client.animes('Bakemonogatari')
+    print(medias)
     
-    async for page in paginator:
-        for media in page:
-            print(media.title)
-
-    await client.close()
-
 async def main():
     sync_client()
     await async_client()

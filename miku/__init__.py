@@ -9,5 +9,6 @@ from .user import *
 from .image import *
 from .paginator import *
 from .errors import *
+from .query import *
 
 from .sync import SyncAnilistClient

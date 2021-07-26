@@ -41,6 +41,9 @@ class AsyncAnilistClient:
         self.http = HTTPHandler(loop, session)
 
     async def close(self):
+        """
+        Closes the http session.
+        """
         return await self.http.close()
 
     @classmethod
@@ -51,6 +54,21 @@ class AsyncAnilistClient:
         self = cls(**kwargs)
         self.http.token = access_token
 
+        return self
+
+    @classmethod
+    async def from_authorization_pin(cls, pin: str, client_id: str, client_secret: str, **kwargs) -> 'AsyncAnilistClient':
+        """
+        Creates a client from a code pin.
+        """
+        self = cls(**kwargs)
+        access_token = await self.http.get_access_token_from_pin(
+            pin=pin,
+            client_id=client_id,
+            client_secret=client_secret,       
+        )
+
+        self.http.token = access_token
         return self
 
     async def __aenter__(self):
@@ -213,6 +231,3 @@ class AsyncAnilistClient:
             A [Paginator](./paginator.md) object.
         """
         return self.http.get_characters(name, per_page=per_page, page=page)
-
-    def studios(self, name: str, *, per_page: int=3, page: int=1) -> Paginator[Studio]:
-        pass

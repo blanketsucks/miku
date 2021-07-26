@@ -232,7 +232,7 @@ class Paginator(Generic[T]):
 
         return Page(self.type, json, self.model, self.http.session, self.cls)
 
-    async def collect(self) -> List[Page[T]]:
+    async def collect(self) -> Data[Page[T]]:
         """
         Collects all the fetchable pages and returns them as a list
 
@@ -240,14 +240,14 @@ class Paginator(Generic[T]):
             A list containing [Page](./page.md) objects.   
         """
 
-        pages = []
+        pages = Data()
 
         while True:
             page = await self.next()
             if not page:
                 break
 
-            pages.append(page)
+            pages.extend(page)
 
         return pages
 

@@ -27,6 +27,19 @@ class SyncHTTPHandler:
     def close(self):
         self.session.close()
 
+    def get_access_token_from_pin(self, pin: str, client_id: str, client_secret: str) -> str:
+        json = {
+            'grant_type': 'authorization_code',
+            'client_id': client_id,
+            'client_secret': client_secret,
+            'code': pin,
+        }
+
+        response = self.session.post('https://anilist.co/api/v2/oauth/token', json=json)
+        data = response.json()
+
+        return data['access_token']
+
     def request(self, query: str, variables: Dict[str, Any]):
         if self.token is not None:
             self.session.headers['Authorization'] = 'Bearer ' + self.token
