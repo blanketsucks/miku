@@ -65,7 +65,7 @@ class HTTPHandler:
             'query': query,
             'variables': variables
         }
-
+        
         for retry in range(5):
             async with session.post(url, json=payload, headers=headers) as response:
                 try:

@@ -50,6 +50,12 @@ class AsyncAnilistClient:
     def from_access_token(cls, access_token: str, **kwargs) -> 'AsyncAnilistClient':
         """
         Creates a client from an access token.
+
+        Args:
+            access_token: The access token to use.
+
+        Returns:
+            A [AsyncAnilistClient](./client.md) object.
         """
         self = cls(**kwargs)
         self.http.token = access_token
@@ -60,6 +66,14 @@ class AsyncAnilistClient:
     async def from_authorization_pin(cls, pin: str, client_id: str, client_secret: str, **kwargs) -> 'AsyncAnilistClient':
         """
         Creates a client from a code pin.
+
+        Args:
+            pin: The code pin to use.
+            client_id: The client id to use.
+            client_secret: The client secret to use.
+
+        Returns:
+            A [AsyncAnilistClient](./client.md) object.
         """
         self = cls(**kwargs)
         access_token = await self.http.get_access_token_from_pin(

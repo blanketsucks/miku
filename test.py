@@ -16,5 +16,3 @@ async def main():
     await async_client()
 
 asyncio.run(main())
-
-
