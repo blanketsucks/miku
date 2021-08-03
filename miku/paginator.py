@@ -33,9 +33,7 @@ class Page(Data[T]):
                 type: str, 
                 payload: Dict[str, Any], 
                 model: Type, 
-                session: aiohttp.ClientSession,
-                cls: Type) -> None:
-        self.cls = cls
+                session: aiohttp.ClientSession) -> None:
         self.payload = payload['data']['Page'][type]
         self.info = payload['data']['Page']['pageInfo']
         self.current_item = 0
@@ -101,7 +99,7 @@ class Page(Data[T]):
             return None
 
         self.current_item += 1
-        return self.model(payload=data, session=self.session, cls=self.cls)
+        return self.model(payload=data, session=self.session)
 
     def current(self) -> T:
         """
@@ -129,9 +127,8 @@ class Page(Data[T]):
         return self.model(payload=data, session=self.session)
 
 class Paginator(Generic[T]):
-    def __init__(self, http: HTTPHandler, type: str, query: str, vars: Dict[str, Any], model: Type, image_cls) -> None:
+    def __init__(self, http: HTTPHandler, type: str, query: str, vars: Dict[str, Any], model: Type) -> None:
         self.http = http
-        self.cls = image_cls
         self.query = query
         self.type = type
         self.vars = vars
@@ -164,7 +161,7 @@ class Paginator(Generic[T]):
         if not data:
             return None
 
-        return Page(self.type, json, self.model, self.http.session, self.cls)
+        return Page(self.type, json, self.model, self.http)
 
     async def next(self) -> Optional[Page[T]]:
         """
@@ -190,7 +187,7 @@ class Paginator(Generic[T]):
         self.next_page = page['currentPage'] + 1
         self.current_page = page['currentPage']
 
-        page = Page(self.type, json, self.model, self.http.session, self.cls)
+        page = Page(self.type, json, self.model, self.http)
         self.pages[self.current_page] = page
 
         return page
@@ -208,7 +205,7 @@ class Paginator(Generic[T]):
         if not data:
             return None
 
-        return Page(self.type, json, self.model, self.http.session, self.cls)
+        return Page(self.type, json, self.model, self.http)
 
     async def previous(self) -> Optional[Page[T]]:
         """
@@ -230,7 +227,7 @@ class Paginator(Generic[T]):
         if not data:
             return None
 
-        return Page(self.type, json, self.model, self.http.session, self.cls)
+        return Page(self.type, json, self.model, self.http)
 
     async def collect(self) -> Data[Page[T]]:
         """

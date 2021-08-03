@@ -1,1 +1,1 @@
-::: miku.statistics.SiteStatistics
+::: miku.statistics

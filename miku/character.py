@@ -94,9 +94,8 @@ class Character:
         favourites: The number of favourites on this character.
         age: The age of this character.
     """
-    def __init__(self, payload, session, cls) -> None:
+    def __init__(self, payload, session) -> None:
         self._payload = payload
-        self._cls = cls
         self._session = session
 
         self.description: str = self._payload['description']
@@ -122,13 +121,13 @@ class Character:
         from .media import _get_media
 
         animes = self._payload['media']['nodes']
-        return [_get_media(anime)(anime, self._session, self._cls) for anime in animes]
+        return [_get_media(anime)(anime, self._session) for anime in animes]
 
     @property
     def name(self) -> CharacterName:
         """
         Returns:
-            A [CharacterName](./character-name.md) object
+            A [CharacterName](./character.md) object
         """
         return CharacterName(self._payload['name'])
 
@@ -144,6 +143,9 @@ class Character:
     def birth(self) -> CharacterBirthdate:
         """
         Returns:
-            A [CharacterBirthdate](./character-birthdate.md) object.
+            A [CharacterBirthdate](./character.md) object.
         """
         return CharacterBirthdate(self._payload['dateOfBirth'])
+
+    def to_dict(self):
+        return self._payload.copy()

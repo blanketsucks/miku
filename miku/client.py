@@ -1,6 +1,6 @@
 import aiohttp
 import asyncio
-from typing import Optional
+from typing import Optional, Union
 
 from .http import HTTPHandler
 from .media import Anime, Media, Manga
@@ -11,6 +11,7 @@ from .studio import Studio
 from .staff import Staff
 from .statistics import SiteStatistics
 from .image import Image
+from .threads import Thread
 
 def _get_event_loop(loop=None) -> asyncio.AbstractEventLoop:
     if loop:
@@ -109,7 +110,7 @@ class AsyncAnilistClient:
             A [User](./user.md) object.
         """
         data = await self.http.get_user(name)
-        return User(data['data']['User'], self.http.session, Image)
+        return User(data['data']['User'], self.http, Image)
 
     async def fetch_media(self, name: str, *, type: Optional[str]=None) -> Media:
         """
@@ -119,7 +120,7 @@ class AsyncAnilistClient:
             A [Media](./media.md) object.
         """
         data = await self.http.get_media(name, type)
-        return Media(data['data']['Media'], self.http.session, Image)
+        return Media(data['data']['Media'], self.http, Image)
 
     async def fetch_anime(self, name: str) -> Anime:
         """
@@ -129,7 +130,7 @@ class AsyncAnilistClient:
             A [Media](./media.md) object.
         """
         data = await self.http.get_anime(name)
-        return Anime(data['data']['Media'], self.http.session, Image)
+        return Anime(data['data']['Media'], self.http, Image)
 
     async def fetch_manga(self, name: str) -> Manga:
         """
@@ -139,7 +140,7 @@ class AsyncAnilistClient:
             A [Media](./media.md) object.
         """
         data = await self.http.get_manga(name)
-        return Manga(data['data']['Media'], self.http.session, Image)
+        return Manga(data['data']['Media'], self.http, Image)
 
     async def fetch_character(self, name: str) -> Character:
         """
@@ -149,7 +150,7 @@ class AsyncAnilistClient:
             A [Character](./character.md) object.
         """
         data = await self.http.get_character(name)
-        return Character(data['data']['Character'], self.http.session, Image)
+        return Character(data['data']['Character'], self.http, Image)
 
     async def fetch_studio(self, name: str) -> Studio:
         """
@@ -159,7 +160,7 @@ class AsyncAnilistClient:
             A [Studio](./studio.md) object.
         """
         data = await self.http.get_studio(name)
-        return Studio(data['data']['Studio'], self.http.session, Image)
+        return Studio(data['data']['Studio'], self.http, Image)
 
     async def fetch_staff(self, name: str) -> Staff:
         """
@@ -169,7 +170,11 @@ class AsyncAnilistClient:
             A [Staff](./staff.md) object.
         """
         data = await self.http.get_staff(name)
-        return Staff(data['data']['Staff'], self.http.session, Image)
+        return Staff(data['data']['Staff'], self.http, Image)
+
+    async def fetch_thread(self, id: Union[int, str]):
+        data = await self.http.get_thread(id)
+        return Thread(data['data']['Thread'], self.http, Image)
 
     def users(self, name: str, *, per_page: int=3, page: int=1) -> Paginator[User]:
         """

@@ -22,7 +22,7 @@ class SiteTrend:
         Returns:
             A `datetime.datetime` object.
         """
-        return datetime.datetime.fromtimestamp(self._payload['date'])
+        return datetime.datetime.utcfromtimestamp(self._payload['date'])
     
     def __repr__(self) -> str:
         return '<SiteTrend count={0.count} change={0.change}>'.format(self)
@@ -37,7 +37,7 @@ class SiteStatistics:
         User statistics.
 
         Returns:
-            A list of [SiteTrend](site-trend.md)s.
+            A list of [SiteTrend](./site-statistics.md)s.
         """
         users = self._payload['users']['nodes']
         return [SiteTrend(user) for user in users]
@@ -48,7 +48,7 @@ class SiteStatistics:
         Anime statistics.
 
         Returns:
-            A list of [SiteTrend](site-trend.md)s.
+            A list of [SiteTrend](./site-statistics.md)s.
         """
         users = self._payload['anime']['nodes']
         return [SiteTrend(user) for user in users]
@@ -59,7 +59,7 @@ class SiteStatistics:
         Manga statistics.
 
         Returns:
-            A list of [SiteTrend](site-trend.md)s.
+            A list of [SiteTrend](./site-statistics.md)s.
         """
         users = self._payload['manga']['nodes']
         return [SiteTrend(user) for user in users]
@@ -70,7 +70,7 @@ class SiteStatistics:
         Character statistics.
 
         Returns:
-            A list of [SiteTrend](site-trend.md)s.
+            A list of [SiteTrend](./site-statistics.md)s.
         """
         users = self._payload['characters']['nodes']
         return [SiteTrend(user) for user in users]
@@ -81,7 +81,7 @@ class SiteStatistics:
         Studio statistics.
 
         Returns:
-            A list of [SiteTrend](site-trend.md)s.
+            A list of [SiteTrend](./site-statistics.md)s.
         """
         users = self._payload['studios']['nodes']
         return [SiteTrend(user) for user in users]
@@ -92,7 +92,7 @@ class SiteStatistics:
         Staff statistics.
 
         Returns:
-            A list of [SiteTrend](site-trend.md)s.
+            A list of [SiteTrend](./site-statistics.md)s.
         """
         users = self._payload['staff']['nodes']
         return [SiteTrend(user) for user in users]
@@ -103,10 +103,10 @@ class SiteStatistics:
         Review statistics.
 
         Returns:
-            A list of [SiteTrend](site-trend.md)s.
+            A list of [SiteTrend](./site-statistics.md)s.
         """
         users = self._payload['reviews']['nodes']
         return [SiteTrend(user) for user in users]
     
-
-    
+    def to_dict(self):
+        return self._payload.copy()

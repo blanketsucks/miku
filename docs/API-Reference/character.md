@@ -1,1 +1,1 @@
-::: miku.Character
+::: miku.character

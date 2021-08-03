@@ -72,7 +72,7 @@ class UserNotificationOption:
     """
     Attributes:
         enabled: Whether this type of notification is enabled.
-        type: A [UserNotificationOptionType](./user-notification-type.md) object.
+        type: A [UserNotificationOptionType](./user.md) object.
 
     """
     def __init__(self, payload) -> None:
@@ -85,11 +85,11 @@ class UserNotificationOption:
 class UserOptions:
     """
     Attributes:
-        title_language: The language the user wants to see media titles in. A [UserTitleLanguage](./user-title-language.md) object.
+        title_language: The language the user wants to see media titles in. A [UserTitleLanguage](./user.md) object.
         display_adult_content: Whether the user has enabled viewing of 18+ content.
         airing_notifications: Whether the user receives notifications when a show they are watching aires.
         profile_color: Profile highlight color (blue, purple, pink, orange, red, green, gray).
-        notification_options: A list of [UserNotificationOption](./user-notification.md) objects.
+        notification_options: A list of [UserNotificationOption](./user.md) objects.
     """
     def __init__(self, payload) -> None:
         self.title_language: UserTitleLanguage = UserTitleLanguage(payload['titleLanguage'])
@@ -157,10 +157,9 @@ class User:
         id: The id of the user.
         url: The user profile's URL. 
     """
-    def __init__(self, payload, session, cls) -> None:
+    def __init__(self, payload, session) -> None:
         self._payload = payload
         self._session = session
-        self._cls = cls
 
         self.name: str = self._payload['name']
         self.id: int = self._payload['id']
@@ -169,13 +168,22 @@ class User:
     def __repr__(self) -> str:
         return '<User id={0.id} name={0.name!r}>'.format(self)
 
+    def __eq__(self, other):
+        return self.id == other.id
+
+    async def fetch_thread(self):
+        from .threads import Thread
+
+        data = await self._session.get_thread_from_user_id(self.id)
+        return Thread(data['data']['Thread'], self._session, self._cls)
+
     @property
     def avatar(self) -> Image:
         """
         Returns:
             The avatar of the user as an [Image](./image.md) object.
         """
-        return self._cls(self._session, self._payload['avatar'])
+        return Image(self._session, self._payload['avatar'])
 
     @property
     def banner(self) -> Optional[Image]:
@@ -186,20 +194,23 @@ class User:
         if not self._payload['bannerImage']:
             return None
 
-        return self._cls(self._session, self._payload['bannerImage'])
+        return Image(self._session, self._payload['bannerImage'])
 
     @property
     def options(self) -> UserOptions:
         """
         Returns:
-            A [UserOptions](./user-options.md) object.
+            A [UserOptions](./user.md) object.
         """
         return UserOptions(self._payload['options'])
 
-    @property
-    def favourites(self) -> UserFavourites:
-        """
-        Returns:
-            A [UserFavourites](./user-favourites.md) object.
-        """
-        return UserFavourites(self._payload['favourites'], self._session)
+    # @property
+    # def favourites(self) -> UserFavourites:
+    #     """
+    #     Returns:
+    #         A [UserFavourites](./user.md) object.
+    #     """
+    #     return UserFavourites(self._payload['favourites'], self._session)
+
+    def to_dict(self):
+        return self._payload.copy()

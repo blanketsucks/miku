@@ -135,9 +135,8 @@ class Media:
         synonyms: Alternative titles of the media.
         description: The description of this media.
     """
-    def __init__(self, payload: Dict[str, Any], session: aiohttp.ClientSession, cls) -> None:
+    def __init__(self, payload: Dict[str, Any], session) -> None:
         self._payload = payload
-        self._cls = cls
         self._session = session
 
         self.url: str = self._payload['siteUrl']
@@ -156,7 +155,7 @@ class Media:
     def type(self) -> MediaType:
         """
         Returns:
-            A [MediaType](./media-type.md) object.
+            A [MediaType](./media.md) object.
         """
         return MediaType(self._payload['type'])
 
@@ -164,7 +163,7 @@ class Media:
     def format(self) -> MediaFormat:
         """
         Returns:
-            A [MediaFormat](./media-format.md) object.
+            A [MediaFormat](./media.md) object.
         """
         return MediaFormat(self._payload['format'])
 
@@ -172,7 +171,7 @@ class Media:
     def status(self) -> MediaStatus:
         """
         Returns:
-            A [MediaStatus](./media-status.md) object.
+            A [MediaStatus](./media.md) object.
         """
         return MediaStatus(self._payload['status'])
 
@@ -212,7 +211,7 @@ class Media:
     def source(self) -> MediaSource:
         """
         Returns:
-            A [MediaSource](./media-source.md) object.
+            A [MediaSource](./media.md) object.
         """
         return MediaSource(self._payload['source'])
 
@@ -222,7 +221,7 @@ class Media:
         Returns:
             The last time this media was updated at.
         """
-        return datetime.datetime.fromtimestamp(self._payload['updatedAt'])
+        return datetime.datetime.utcfromtimestamp(self._payload['updatedAt'])
 
     @property
     def episodes(self) -> Optional[int]:
@@ -237,7 +236,7 @@ class Media:
     def title(self) -> MediaTitle:
         """
         Returns:
-            A [MediaTitle](./media-title.md) object.
+            A [MediaTitle](./media.md) object.
         """
         return MediaTitle(self._payload)
 
@@ -245,18 +244,18 @@ class Media:
     def banner_image(self) -> Image:
         """
         Returns:
-            an [Image](./media) object.
+            an [Image](./image.md) object.
         """
 
-        return self._cls(self._session, self._payload['bannerImage'])
+        return Image(self._session, self._payload['bannerImage'])
 
     @property
     def cover_image(self) -> Image:
         """
         Returns:
-            an [Image](./media) object.
+            an [Image](./image.md) object.
         """
-        return self._cls(self._session, self._payload['coverImage'])
+        return Image(self._session, self._payload['coverImage'])
 
     @property
     def characters(self) -> Data[Character]:
@@ -267,7 +266,14 @@ class Media:
         from .character import Character
 
         characters = self._payload['characters']['nodes']
-        return Data([Character(data, self._session, self._cls) for data in characters])
+        return Data([Character(data, self._session) for data in characters])
+
+    def to_dict(self):
+        tags = self.tags
+        payload = self._payload.copy()
+
+        payload['tags'] = tags
+        return payload
 
 class Anime(Media):
     pass

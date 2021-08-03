@@ -30,9 +30,8 @@ class Staff:
         home_town: The persons birthplace or hometown.
         url: The url for the staff page on the AniList website.
     """
-    def __init__(self, payload, session, cls) -> None:
+    def __init__(self, payload, session) -> None:
         self._payload = payload
-        self._cls = cls
         self._session = session
 
         self.id: int = self._payload['id']
@@ -50,7 +49,7 @@ class Staff:
         The names of the staff member.
 
         Returns:
-            A subclass of [CharacterName](./character-name.md).
+            A subclass of [CharacterName](./character.md).
         """
         return StaffName(self._payload['name'])
 
@@ -62,13 +61,13 @@ class Staff:
         Returns:
             An [Image](image.md) object.
         """
-        return self._cls(self._session, self._payload['image'])
+        return Image(self._session, self._payload['image'])
 
     @property
     def birth(self) -> StaffBirthdate:
         """
         Returns:
-            A subclass of [CharacterBirthdate](./character-birthdate.md).
+            A subclass of [CharacterBirthdate](./character.md).
         """
         return StaffBirthdate(self._payload['dateOfBirth'])
 
@@ -76,7 +75,7 @@ class Staff:
     def death(self) -> StaffDeathdate:
         """
         Returns:
-            A subclass of [CharacterBirthdate](./character-birthdate.md).
+            A subclass of [CharacterBirthdate](./character.md).
         """
         return StaffDeathdate(self._payload['dateOfDeath'])
 
@@ -89,4 +88,7 @@ class Staff:
             A [Data](./data.md) object.
         """
         characters = self._payload['characters']['nodes']
-        return utils.Data([Character(character, self._session, self._cls) for character in characters])
+        return utils.Data([Character(character, self._session) for character in characters])
+
+    def to_dict(self):
+        return self._payload.copy()

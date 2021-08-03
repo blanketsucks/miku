@@ -83,3 +83,43 @@ SITE_STATISTICS_FIELDS = (
     'studios { nodes { date change count }}',
     'reviews { nodes { date change count }}'
 )
+
+THREAD_FIELDS = (
+    'id',
+    'title',
+    'body',
+    'userId',
+    'replyUserId',
+    'replyCommentId',
+    'replyCount',
+    'viewCount',
+    'isLocked',
+    'isSticky',
+    'isSubscribed',
+    'likeCount',
+    'isLiked',
+    'repliedAt',
+    'createdAt',
+    'updatedAt',
+    'siteUrl',
+    'categories { name id }'
+    'user {' + ' '.join(USER_FIELDS) + ' }',
+    'replyUser {' + ' '.join(USER_FIELDS) + ' }',
+    'likes {' + ' '.join(USER_FIELDS) + ' }',
+)
+
+COMMENT_FIELDS = (
+    'id',
+    'userId',
+    'threadId',
+    'comment',
+    'likeCount',
+    'isLiked',
+    'createdAt',
+    'updatedAt',
+    'siteUrl',
+    'user {' + ' '.join(USER_FIELDS) + ' }',
+    'thread {' + ' '.join(THREAD_FIELDS) + ' }',
+    'likes {' + ' '.join(USER_FIELDS) + ' }',
+    'childComments'
+)

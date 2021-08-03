@@ -15,9 +15,8 @@ class Studio:
         url: The url for the studio page on the AniList website.
         favourites: The amount of users who have favourited the studio
     """
-    def __init__(self, payload, session, cls) -> None:
+    def __init__(self, payload, session) -> None:
         self._payload = payload
-        self._cls = cls
         self._session = session
 
         self.id: int = payload['id']
@@ -25,6 +24,9 @@ class Studio:
         self.is_animation_studio: bool = payload['isAnimationStudio']
         self.url: str = payload['siteUrl']
         self.favourites: int = payload['favourites']
+
+    def __eq__(self, other):
+        return self.id == other.id
 
     @property
     def medias(self) -> List[Union[Anime, Manga]]:
@@ -37,4 +39,7 @@ class Studio:
         from .media import _get_media
 
         medias = self._payload['media']['nodes']
-        return Data([_get_media(media)(media, self._session, self._cls) for media in medias])
+        return Data([_get_media(media)(media, self._session) for media in medias])
+
+    def to_dict(self):
+        return self._payload.copy()
