@@ -102,18 +102,3 @@ async def main():
 
 asyncio.run(main())
 ```
-
-Using the synchronous client
-```py
-import miku
-
-with miku.SyncAnilistClient() as client:
-    anime = client.fetch_anime('Kanojo, Okarishimasu')
-    print(anime)
-
-```
-
------
-
-### Note
-The synchronous client does not add any new methods, it's just simply a sync version of the async client, thus, it's not documented.
