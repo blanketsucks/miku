@@ -21,7 +21,7 @@ nav:
   - Home: index.md
   - Getting Started: getting-started.md
   - API Reference:
-    - AsyncAnilistClient: API-Reference/client.md
+    - AnilistClient: API-Reference/client.md
     - Media: API-Reference/media.md
     - Character: API-Reference/character.md
     - User: API-Reference/user.md

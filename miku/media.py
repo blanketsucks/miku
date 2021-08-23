@@ -269,10 +269,7 @@ class Media:
         return Data([Character(data, self._session) for data in characters])
 
     def to_dict(self):
-        tags = self.tags
         payload = self._payload.copy()
-
-        payload['tags'] = tags
         return payload
 
 class Anime(Media):

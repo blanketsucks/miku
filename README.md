@@ -25,7 +25,7 @@ import miku
 import asyncio
 
 async def main():
-    async with miku.AsyncAnilistClient() as client:
+    async with miku.AnilistClient() as client:
         anime = await client.fetch_anime('Gurren Lagann')
         print(anime)
 
@@ -38,7 +38,7 @@ import miku
 import asyncio
 
 async def main():
-    async with miku.AsyncAnilistClient() as client:
+    async with miku.AnilistClient() as client:
         manga = await client.fetch_manga('Bakemonogatari')
         print(manga)
 
@@ -51,7 +51,7 @@ import miku
 import asyncio
 
 async def main():
-    async with miku.AsyncAnilistClient() as client:
+    async with miku.AnilistClient() as client:
         character = await client.fetch_character('Miku Nakano')
         print(character)
 
@@ -67,7 +67,7 @@ import aiohttp
 async def main():
     session = aiohttp.ClientSession()
     
-    async with miku.AsyncAnilistClient.from_session(session) as client:
+    async with miku.AnilistClient.from_session(session) as client:
         anime = await client.fetch_anime('Kanojo mo Kanojo')
         print(anime)
 
@@ -80,7 +80,7 @@ import miku
 import asyncio
 
 async def main():
-    async with miku.AsyncAnilistClient() as client:
+    async with miku.AnilistClient() as client:
         animes = await client.animes('5-toubun no Hanayome')
         print(animes)
 
@@ -93,7 +93,7 @@ import miku
 import asyncio
 
 async def main():
-    async with miku.AsyncAnilistClient() as client:
+    async with miku.AnilistClient() as client:
         paginator = client.animes('5-toubun no Hanayome')
 
         async for page in paginator:

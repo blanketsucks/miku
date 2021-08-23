@@ -26,13 +26,13 @@ def _get_event_loop(loop=None) -> asyncio.AbstractEventLoop:
         return asyncio.get_event_loop()
 
 __all__ = (
-    'AsyncAnilistClient',
+    'AnilistClient',
 )
 
-class AsyncAnilistClient:
+class AnilistClient:
     def __init__(self, loop: Optional[asyncio.AbstractEventLoop]=None, session: aiohttp.ClientSession=None) -> None:
         """
-        AsyncAnilistClient constructor.
+        AnilistClient constructor.
 
         Args:
             loop: An optional argument defining the event loop used for the client's requests.
@@ -48,7 +48,7 @@ class AsyncAnilistClient:
         return await self.http.close()
 
     @classmethod
-    def from_access_token(cls, access_token: str, **kwargs) -> 'AsyncAnilistClient':
+    def from_access_token(cls, access_token: str, **kwargs) -> 'AnilistClient':
         """
         Creates a client from an access token.
 
@@ -56,7 +56,7 @@ class AsyncAnilistClient:
             access_token: The access token to use.
 
         Returns:
-            A [AsyncAnilistClient](./client.md) object.
+            A [AnilistClient](./client.md) object.
         """
         self = cls(**kwargs)
         self.http.token = access_token
@@ -64,7 +64,7 @@ class AsyncAnilistClient:
         return self
 
     @classmethod
-    async def from_authorization_pin(cls, pin: str, client_id: str, client_secret: str, **kwargs) -> 'AsyncAnilistClient':
+    async def from_authorization_pin(cls, pin: str, client_id: str, client_secret: str, **kwargs) -> 'AnilistClient':
         """
         Creates a client from a code pin.
 
@@ -74,7 +74,7 @@ class AsyncAnilistClient:
             client_secret: The client secret to use.
 
         Returns:
-            A [AsyncAnilistClient](./client.md) object.
+            A [AnilistClient](./client.md) object.
         """
         self = cls(**kwargs)
         access_token = await self.http.get_access_token_from_pin(
@@ -178,7 +178,7 @@ class AsyncAnilistClient:
 
     def users(self, name: str, *, per_page: int=3, page: int=1) -> Paginator[User]:
         """
-        The same as [AsyncAnilistClient.media](./client.md#miku.client.AsyncAnilistClient.media) but 
+        The same as [AnilistClient.media](./client.md#miku.client.AnilistClient.media) but 
         the [Page](./page.md) retreived through the [Paginator](./paginator.md) returns a [User](./user.md) object.
 
         Args:
@@ -209,7 +209,7 @@ class AsyncAnilistClient:
 
     def animes(self, name: str, *, per_page: int=3, page: int=1) -> Paginator[Anime]:
         """
-        The same as [AsyncAnilistClient.media](./client.md#miku.client.AsyncAnilistClient.media) 
+        The same as [AnilistClient.media](./client.md#miku.client.AnilistClient.media) 
         but the [Page](./page.md) retreived through the [Paginator](./paginator.md) returns an [Anime](./media.md) object.
 
         Args:
@@ -224,7 +224,7 @@ class AsyncAnilistClient:
 
     def mangas(self, name: str, *, per_page: int=3, page: int=1) -> Paginator[Manga]:
         """
-        The same as [AsyncAnilistClient.media](./client.md#miku.client.AsyncAnilistClient.media) 
+        The same as [AnilistClient.media](./client.md#miku.client.AnilistClient.media) 
         but the [Page](./page.md) retreived through the [Paginator](./paginator.md) returns a [Manga](./media.md) object.
 
         Args:
@@ -239,7 +239,7 @@ class AsyncAnilistClient:
 
     def characters(self, name: str, *, per_page: int=3, page: int=1) -> Paginator[Character]:
         """
-        The same as [AsyncAnilistClient.media](./client.md#miku.client.AsyncAnilistClient.media) but
+        The same as [AnilistClient.media](./client.md#miku.client.AnilistClient.media) but
         the [Page](./page.md) retreived through the [Paginator](./paginator.md) returns a [Character](./character.md) object.
 
         Args:

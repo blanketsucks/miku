@@ -1,4 +1,4 @@
-from typing import Any, AsyncIterator, Coroutine, Dict, Iterable, TypeVar, Callable, Optional, List, Union
+from typing import Any, AsyncIterator, Coroutine, Dict, TypeVar, Callable, Optional, Union
 from operator import attrgetter
 import asyncio
 
@@ -27,7 +27,7 @@ class Data(list[T]):
 
         Example:
             ```py
-            async with miku.AsyncAnilistClient() as client:
+            async with miku.AnilistClient() as client:
                 anime = await client.fetch_anime('Bakemonogatari')
                 character = anime.characters.find(lambda character: character.name.full == 'Episode')
                 print(character)
@@ -46,7 +46,7 @@ class Data(list[T]):
 
         Example:
             ```py
-            async with miku.AsyncAnilistClient() as client:
+            async with miku.AnilistClient() as client:
                 medias = await client.media('5-toubun no hanayome')
                 async for media in medias.filter(lambda media: media.format == miku.MediaFormat.TV):
                     print(media)
@@ -68,7 +68,7 @@ class Data(list[T]):
 
         Example:
             ```py
-            async with miku.AsyncAnilistClient() as client:
+            async with miku.AnilistClient() as client:
                 anime = await client.fetch_anime('Bakemonogatari')
                 character = anime.characters.get(name_full='Episode')
                 print(character)
@@ -85,7 +85,3 @@ class Data(list[T]):
 def remove_docstring(f):
     f.__doc__ = ''
     return f
-
-async def map(func: Callable[[T], Coroutine[Any, Any, Any]], iterable: Iterable[T]) -> AsyncIterator:
-    for iterable in iterable:
-        yield await func(iterable)
