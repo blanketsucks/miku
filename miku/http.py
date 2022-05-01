@@ -165,19 +165,7 @@ class HTTPHandler:
         )
 
         fields = QueryFields("User", search='$search')
-
-        for field in USER_FIELDS:
-            fields.add_field(field)
-
-        # media = ' '.join(ANIME_FIELDS)
-        # characters = ' '.join(CHARACTER_FIELDS) 
-        # studios = ' '.join(STUDIO_FIELDS)
-
-        # anime = 'anime { nodes {' + media + ' } }'
-        # manga = 'manga { nodes {' + media + ' } }'
-        # # character = 'characters { nodes {' + characters + ' } }'
-
-        # fields.add_field('favourites', '\n'.join((anime, manga)))
+        self.build_query(USER_FIELDS, fields)
 
         query = Query(operation=operation, fields=fields)
         query = query.build()
@@ -234,11 +222,11 @@ class HTTPHandler:
         )
 
         fields = QueryFields("Staff", search='$search')
+        self.build_query(STAFF_FIELDS, fields)
 
-        for field in STAFF_FIELDS:
-            fields.add_field(field)
-
-        fields.add_field('characters', 'nodes {' + ' '.join(CHARACTER_FIELDS) + ' }')
+        characters = fields.add_field('characters')
+        nodes = characters.add_field('nodes')
+        self.build_query(CHARACTER_FIELDS, nodes)
 
         query = Query(operation=operation, fields=fields)
         query = query.build()
@@ -256,9 +244,7 @@ class HTTPHandler:
         )
 
         fields = QueryFields('SiteStatistics')
-
-        for field in SITE_STATISTICS_FIELDS:
-            fields.add_field(field)
+        self.build_query(SITE_STATISTICS_FIELDS, fields)
 
         query = Query(operation=operation, fields=fields)
         query = query.build()
