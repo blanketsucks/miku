@@ -1,38 +1,39 @@
-from typing import List, Optional
+from __future__ import annotations
 
-from .character import CharacterName, CharacterBirthdate, Character
+from typing import Any, Dict, List, TYPE_CHECKING
+
+from .character import Name, DateOfBirth, Character
 from .image import Image
-from . import utils
+from .utils import IDComparable
 
-class StaffName(CharacterName):
+if TYPE_CHECKING:
+    from .http import HTTPHandler
+
+__all__ = (
+    'DateOfDeath',
+    'Staff'
+)
+
+class DateOfDeath(DateOfBirth):
     pass
 
-class StaffBirthdate(CharacterBirthdate):
+class Staff(IDComparable):
+    __slots__ = (
+        '_payload',
+        '_http'
+        'id',
+        'language',
+        'description',
+        'primary_occupations',
+        'gender',
+        'age',
+        'home_town',
+        'url'
+    )
 
-    @utils.remove_docstring
-    def __init__(self, birth) -> None:
-        self.year: Optional[int] = birth['year']
-        self.month: Optional[int] = birth['month']
-        self.day: Optional[int] = birth['day']
-
-
-class StaffDeathdate(StaffBirthdate):
-    pass
-
-class Staff:
-    """
-    Attributes:
-        id: The id of the staff member.
-        language: The primary language of the staff member. Current values: Japanese, English, Korean, Italian, Spanish, Portuguese, French, German, Hebrew, Hungarian, Chinese, Arabic, Filipino, Catalan.
-        primary_occupations: The person's primary occupations.
-        gender: The staff's gender. Usually Male, Female, or Non-binary but can be any string.
-        age: The person's age in years.
-        home_town: The persons birthplace or hometown.
-        url: The url for the staff page on the AniList website.
-    """
-    def __init__(self, payload, session) -> None:
+    def __init__(self, payload: Dict[str, Any], http: HTTPHandler) -> None:
         self._payload = payload
-        self._session = session
+        self._http = http
 
         self.id: int = self._payload['id']
         self.language: str = self._payload['languageV2']
@@ -44,51 +45,42 @@ class Staff:
         self.url: str = self._payload['siteUrl']
 
     @property
-    def name(self) -> StaffName:
+    def name(self) -> Name:
         """
         The names of the staff member.
 
         Returns:
             A subclass of [CharacterName](./character.md).
         """
-        return StaffName(self._payload['name'])
+        return self._payload['name']
 
     @property
     def image(self) -> Image:
-        """
-        The staff images.
-
-        Returns:
-            An [Image](image.md) object.
-        """
-        return Image(self._session, self._payload['image'])
+        return Image(self._http.session, self._payload['image']) # type: ignore
 
     @property
-    def birth(self) -> StaffBirthdate:
+    def birth(self) -> DateOfBirth:
         """
         Returns:
             A subclass of [CharacterBirthdate](./character.md).
         """
-        return StaffBirthdate(self._payload['dateOfBirth'])
+        return self._payload['dateOfBirth']
 
     @property
-    def death(self) -> StaffDeathdate:
+    def death(self) -> DateOfDeath:
         """
         Returns:
             A subclass of [CharacterBirthdate](./character.md).
         """
-        return StaffDeathdate(self._payload['dateOfDeath'])
+        return self._payload['dateOfDeath']
 
     @property
-    def characters(self) -> utils.Data[Character]:
+    def characters(self) -> List[Character]:
         """
         Characters voiced by the actor.
 
         Returns:
             A [Data](./data.md) object.
         """
-        characters = self._payload['characters']['nodes']
-        return utils.Data([Character(character, self._session) for character in characters])
+        return [Character(character, self._http) for character in self._payload['characters']['nodes']]
 
-    def to_dict(self):
-        return self._payload.copy()

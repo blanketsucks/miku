@@ -6,6 +6,8 @@ __all__ = (
 )
 
 class Image:
+    __slots__ = ('_session', 'large', 'medium')
+
     def __init__(self, session: ClientSession, payload: Union[Dict[str, str], str]) -> None:
         self._session = session 
     
@@ -35,10 +37,10 @@ class Image:
 
         if large:
             url = self.large
-
-        if medium:
+        else:
             url = self.medium
 
+        assert url
         async with self._session.get(url) as response:
             data = await response.read()
             return data

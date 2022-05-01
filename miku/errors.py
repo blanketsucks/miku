@@ -1,55 +1,49 @@
-from typing import Any, Dict, Type, Union
+from typing import Any, Dict, List, Type, Union
 
 __all__ = (
     'HTTPException',
     'Forbidden',
-    'BadRequest'
+    'BadRequest',
+    'NotFound',
+    'AniListServerError',
 )
 
 class HTTPException(Exception):
-    status: int = None
-    def __init__(self, data: Union[str, Dict[str, Any]]) -> None:
+    def __init__(self, status: int, data: Union[str, Dict[str, Any]]) -> None:
+        self.status = status
+        errors: List[Dict[str, Any]] = []
+
         if isinstance(data, dict):
             error: Dict[str, Any] = data['errors'][0]
-
-            if not self.status:
-                self.status: int = error['status']
-
             message: str = error['message']
 
             if message == 'validation':
                 validation: Dict[str, Any] = error['validation']
 
-                self.message: str = validation.values()[0][0]
-                self.errors = list(validation.values())
+                self.message: str = list(validation.values())[0][0]
+                errors = list(validation.values())
             else:
                 self.message: str = error['message']
-                self.errors = []
 
         else:
             self.message = data
-            self.errors = []
         
-        if self.status:
-            ret = f'{self.status}: {self.message}'
-        else:
-            ret = self.message
-
-        super().__init__(ret)
+        self.errors = errors
+        super().__init__(f'({self.status}): {self.message}')
 
 class BadRequest(HTTPException):
-    status = 400
+    pass
 
 class Forbidden(HTTPException):
-    status = 403
+    pass
 
 class NotFound(HTTPException):
-    status = 404
+    pass
 
 class AniListServerError(HTTPException):
     pass
 
-mapping: Dict[int, Type[HTTPException]] = {
+ERROR_MAPPING: Dict[int, Type[HTTPException]] = {
     400: BadRequest,
     403: Forbidden,
     404: NotFound,

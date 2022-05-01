@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
 __all__ = (
     'QueryIncomplete',
@@ -13,10 +13,10 @@ class QueryIncomplete(Exception):
         super().__init__(f'Query missing {element!r} element')
 
 class QueryOperation:
-    def __init__(self, type: str, *, name: str=None, variables: Dict[str, str]) -> None:
+    def __init__(self, type: str, *, name: Optional[str] = None, variables: Optional[Dict[str, str]] = None) -> None:
         self.name = name
         self.type = type
-        self.variables = variables
+        self.variables = variables or {}
 
     def build(self):
         vars = ', '.join([f'{k}: {v}' for k, v in self.variables.items()])
@@ -27,7 +27,7 @@ class QueryOperation:
             operation = f'{self.type}'
 
         if self.variables:
-            operation += f' ({vars}) '
+            operation += f'({vars})'
 
         return operation + ' {'
 
@@ -35,22 +35,16 @@ class QueryOperation:
         return  self.build()
 
 class QueryField:
-    def __init__(self, name: str, *items, **arguments) -> None:
+    def __init__(self, name: str, *items: str, **arguments: Any) -> None:
         self.name = name
         self.arguments = arguments
+        self.items = list(items)
+        self.fields: List[QueryField] = []
 
-        self._items = list(items)
-        self.fields = []
+    def __repr__(self) -> str:
+        return f'<QueryField name={self.name!r}>'
 
-    def add_item(self, name: str):
-        self._items.append(name)
-        return self
-
-    def add_items(self, *names):
-        self._items.extend(list(names))
-        return self
-
-    def add_field(self, name: str, *items, **arguments):
+    def add_field(self, name: str, *items: str, **arguments: Any):
         field = QueryField(name, *items, **arguments)
         self.fields.append(field)
 
@@ -58,30 +52,32 @@ class QueryField:
 
     def build(self):
         args = ', '.join([f'{k}: {v}' for k, v in self.arguments.items()])
-        fields = '\n'.join([field.build() for field in self.fields])
-        items = '\n'.join(self._items)
+        fields = ' '.join([field.build() for field in self.fields])
+        items = ' '.join(self.items)
 
-        if self._items or self.arguments:
-            if args:
-                query = f'{self.name} ({args}) ' + '{\n' + f'{fields}\n{items}' + '\n}' 
-            else:
-                query = f'{self.name} ' + '{\n' + f'{fields}\n{items}' + '\n}' 
+        query = self.name
+        if self.arguments:
+            query += f' ({args})'
 
-            return query
+        if self.fields:
+            query += ' { ' + fields + ' }'
+        elif self.items:
+            query += ' { ' + items + ' }'
+        elif self.items and self.fields:
+            query += ' { ' + fields + items + ' }'
 
-        return self.name
+        return query
 
     def __str__(self) -> str:
         return self.build()
 
 class QueryFields:
-    def __init__(self, name: str, fields: List[QueryField]=None, **arguments) -> None:
+    def __init__(self, name: str, fields: Optional[List[QueryField]] = None, **arguments: Any) -> None:
         self.name = name
         self.fields = fields or []
-
         self.arguments = arguments
 
-    def add_field(self, name: str, *items: Tuple[str], **arguments):
+    def add_field(self, name: str, *items: str, **arguments: Any):
         field = QueryField(name, *items, **arguments)
         self.fields.append(field)
 
@@ -91,14 +87,14 @@ class QueryFields:
         if not self.fields:
             raise QueryIncomplete('fields')
 
-        fields = '\n'.join([field.build() for field in self.fields])
+        fields = ' '.join([field.build() for field in self.fields])
         args = ', '.join([f'{k}: {v}' for k, v in self.arguments.items()])
 
-        query = f'{self.name} '
+        query = f'{self.name}'
         if self.arguments:
             query += f'({args}) '
 
-        query +=  '{\n' + fields + '\n}'
+        query +=  '{ ' + fields + ' }'
 
         return query
 
@@ -106,46 +102,44 @@ class QueryFields:
         return self.build()
 
 class Query:
-    def __init__(self, operation: QueryOperation=None, fields: QueryFields=None) -> None:
-        self._opration: Optional[QueryOperation] = operation
+    def __init__(self, *, operation: Optional[QueryOperation] = None, fields: Optional[QueryFields] = None) -> None:
+        self._operation = operation
         self._fields = fields
 
     @property
     def operation(self):
-        return self._opration
+        return self._operation
 
     @operation.setter
-    def operation(self, value):
+    def operation(self, value: QueryOperation):
         if not isinstance(value, QueryOperation):
             raise TypeError('operation value must be an instance of QueryOperation')
 
-        self._opration = value
+        self._operation = value
 
     @property
     def fields(self):
         return self._fields
 
     @fields.setter
-    def fields(self, value):
+    def fields(self, value: QueryFields):
         if not isinstance(value, QueryFields):
             raise TypeError('fields value must be an instance of QueryFields')
 
         self._fields = value
 
-    def set_operation(self, type: str, *, name: str=None, variables: Dict[str, str]):
+    def set_operation(self, type: str, *, name: Optional[str] = None, variables: Dict[str, str]):
         operation = QueryOperation(type, name=name, variables=variables)
-        self._opration = operation
+        self._operation = operation
 
         return operation
     
-    def add_fields(self, name: str, fields: List[QueryField]=None, **arguments) -> QueryFields:
-        fields = QueryFields(name, fields, **arguments)
-        self._fields = fields
-
-        return fields
+    def add_fields(self, name: str, fields: Optional[List[QueryField]] = None, **arguments) -> QueryFields:
+        self.fields = QueryFields(name, fields, **arguments)
+        return self.fields
 
     def build(self) -> str:
-        if not self._opration:
+        if not self.operation or not self.fields:
             raise QueryIncomplete('operation')
 
         operation = self.operation.build()
@@ -153,7 +147,7 @@ class Query:
         query = operation + ' '
         query += self.fields.build()
 
-        return query + '\n}'
+        return query + ' }'
 
     def __str__(self) -> str:
         return self.build()

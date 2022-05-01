@@ -1,23 +1,29 @@
 from __future__ import annotations
-from typing import List, TYPE_CHECKING, Union
 
-from .utils import Data
+from typing import Any, Dict, List, TYPE_CHECKING
+
+from .utils import IDComparable
 
 if TYPE_CHECKING:
-    from .media import Anime, Manga
+    from .http import HTTPHandler
+    from .media import Media
 
-class Studio:
-    """
-    Attributes:
-        id: The id of the studio.
-        name: The name of the studio.
-        is_animation_studio: If the studio is an animation studio or a different kind of company.
-        url: The url for the studio page on the AniList website.
-        favourites: The amount of users who have favourited the studio
-    """
-    def __init__(self, payload, session) -> None:
+__all__ = 'Studio',
+
+class Studio(IDComparable):
+    __slots__ = (
+        '_payload',
+        '_http',
+        'id',
+        'name',
+        'is_animation_studio',
+        'url',
+        'favourites'
+    )
+
+    def __init__(self, payload: Dict[str, Any], http: HTTPHandler) -> None:
         self._payload = payload
-        self._session = session
+        self._http = http
 
         self.id: int = payload['id']
         self.name: str = payload['name']
@@ -25,21 +31,15 @@ class Studio:
         self.url: str = payload['siteUrl']
         self.favourites: int = payload['favourites']
 
-    def __eq__(self, other):
-        return self.id == other.id
-
     @property
-    def medias(self) -> List[Union[Anime, Manga]]:
+    def medias(self) -> List[Media]:
         """
         The media the studio has worked on.
 
         Returns:
             A [Data](data.md) object.
         """
-        from .media import _get_media
+        from .media import Media
 
         medias = self._payload['media']['nodes']
-        return Data([_get_media(media)(media, self._session) for media in medias])
-
-    def to_dict(self):
-        return self._payload.copy()
+        return [Media(media, self._http) for media in medias]

@@ -1,14 +1,15 @@
+from typing import Any, Dict, List
 import datetime
-from typing import List
+
+__all__ = (
+    'SiteTrend',
+    'SiteStatistics'
+)
 
 class SiteTrend:
-    """
-    Attributes:
-        count: The count.
-        change: The change from yesterday.
-    
-    """
-    def __init__(self, payload) -> None:
+    __slots__ = ('_payload', 'count', 'change')
+
+    def __init__(self, payload: Dict[str, Any]) -> None:
         self._payload = payload
 
         self.count: int = payload['count']
@@ -28,7 +29,9 @@ class SiteTrend:
         return '<SiteTrend count={0.count} change={0.change}>'.format(self)
 
 class SiteStatistics:
-    def __init__(self, payload) -> None:
+    __slots__ = ('_payload',)
+
+    def __init__(self, payload: Dict[str, Any]) -> None:
         self._payload = payload
 
     @property
@@ -108,5 +111,3 @@ class SiteStatistics:
         users = self._payload['reviews']['nodes']
         return [SiteTrend(user) for user in users]
     
-    def to_dict(self):
-        return self._payload.copy()

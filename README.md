@@ -94,7 +94,7 @@ import asyncio
 
 async def main():
     async with miku.AnilistClient() as client:
-        paginator = client.animes('5-toubun no Hanayome')
+        paginator = client.animes('Boku no Hero Academia')
 
         async for page in paginator:
             for anime in page:

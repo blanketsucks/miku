@@ -1,15 +1,14 @@
 import asyncio
-from typing import Any, Dict, Union
+from typing import Any, Dict, Optional, Union, Tuple
 import aiohttp
 
-from .query import Query, QueryFields, QueryOperation
+from .query import Query, QueryField, QueryFields, QueryOperation
 from .fields import *
-from .media import Anime, Manga, Media
+from .media import Media
 from .character import Character
 from .paginator import Paginator
 from .user import User
-from .image import Image
-from .errors import AniListServerError, HTTPException, mapping
+from .errors import HTTPException, ERROR_MAPPING
 
 __all__ = (
     'HTTPHandler',
@@ -18,32 +17,15 @@ __all__ = (
 class HTTPHandler:
     URL = 'https://graphql.anilist.co'
 
-    def __init__(self, loop: asyncio.AbstractEventLoop, session: aiohttp.ClientSession=None) -> None:
+    def __init__(self, loop: asyncio.AbstractEventLoop, session: Optional[aiohttp.ClientSession] = None) -> None:
         if session:
             ret = 'Expected an aiohttp.ClientSession instance but got {0.__class__.__name__!r} instead'
             raise TypeError(ret.format(session))       
 
         self.session = session
         self.loop = loop
-        self.token = None
-
-    def parse_args(self, id: Union[int, str]):
-        operation_variables = {}
-        variables = {}
-        arguments = {}
-
-        if isinstance(id, str):
-            operation_variables['$search'] = 'String'
-            arguments['search'] = '$search'
-            variables['search'] = id
-        else:
-            operation_variables['$id'] = 'Int'
-            arguments['id'] = '$id'
-            variables['id'] = id
-
-        return operation_variables, variables, arguments
-
-
+        self.token: Optional[str] = None
+        self.lock = asyncio.Lock()
 
     async def create_session(self):
         self.session = session = aiohttp.ClientSession(loop=self.loop)
@@ -65,55 +47,66 @@ class HTTPHandler:
             return data['access_token']
 
     async def request(self, query: str, variables: Dict[str, Any]):
-        headers = {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-        }
-
+        headers = {'Content-Type': 'application/json', 'Accept': 'application/json',}
         if self.token:
             headers['Authorization'] = 'Bearer ' + self.token
-
-        url = self.URL
 
         session = self.session
         if not session:
             session = await self.create_session()
 
-        payload = {
-            'query': query,
-            'variables': variables
-        }
-        
-        for retry in range(5):
-            async with session.post(url, json=payload, headers=headers) as response:
-                try:
-                    data = await response.json()
-                except aiohttp.ContentTypeError:
-                    pass
-                
-                if response.status == 500:
-                    await asyncio.sleep(retry * 2)
-                    continue
+        payload = {'query': query, 'variables': variables}
+
+        async with self.lock:
+            async with session.post(self.URL, json=payload, headers=headers) as response:
+                data = await response.json()
+                if response.status == 200:
+                    return data
 
                 if response.status == 429:
-                    retry_after = response.headers['Retry-After']
-                    await asyncio.sleep(int(retry_after))
+                    retry_after = float(response.headers['Retry-After'])
+                    await asyncio.sleep(retry_after)
 
-                    continue
-                
-                if data.get('errors'):
-                    cls = mapping.get(data['errors'][0]['status'], HTTPException)
-                    raise cls(data)
+                    return await self.request(query, variables)
 
-                return data
+                error = ERROR_MAPPING.get(response.status, HTTPException)
+                raise error(response.status, data)
 
-        raise AniListServerError('Internal server error')
+        raise RuntimeError('Unreachable code')
 
     async def close(self):
         if not self.session:
             return None
 
         return await self.session.close()
+
+    def parse_args(self, id: Union[int, str]):
+        operation_variables = {}
+        variables = {}
+        arguments = {}
+
+        if isinstance(id, str):
+            operation_variables['$search'] = 'String'
+            arguments['search'] = '$search'
+            variables['search'] = id
+        else:
+            operation_variables['$id'] = 'Int'
+            arguments['id'] = '$id'
+            variables['id'] = id
+
+        return operation_variables, variables, arguments
+
+    def build_query(self, fields: Union[Dict[str, Any], Tuple[Any, ...]], obj: Union[QueryFields, QueryField]) -> None:
+        if isinstance(fields, dict):
+            name = list(fields.keys())[0]
+            return self.build_query(fields[name], obj.add_field(name))
+
+        for field in fields:
+            if isinstance(field, dict):
+                name = list(field.keys())[0]
+                self.build_query(field[name], obj.add_field(name))
+            else:
+                obj.add_field(field)
 
     async def get_thread_from_user_id(self, user_id: int):
         operation = QueryOperation(
@@ -122,10 +115,9 @@ class HTTPHandler:
         )
 
         fields = QueryFields("Thread", userId='$userId')
-        for field in THREAD_FIELDS:
-            fields.add_field(field)
+        self.build_query(THREAD_FIELDS, fields)
 
-        query = Query(operation, fields)
+        query = Query(operation=operation, fields=fields)
         query = query.build()
 
         variables = {
@@ -143,10 +135,9 @@ class HTTPHandler:
         )
         
         fields = QueryFields("Thread", **arguments)
-        for field in THREAD_FIELDS:
-            fields.add_field(field)
-
-        query = Query(operation, fields)
+        self.build_query(THREAD_FIELDS, fields)
+        
+        query = Query(operation=operation, fields=fields)
         query = query.build()
 
         return await self.request(query, variables)
@@ -160,10 +151,9 @@ class HTTPHandler:
         )
 
         fields = QueryFields("ThreadComment", **arguments)
-        for field in COMMENT_FIELDS:
-            fields.add_field(field)
+        self.build_query(THREAD_COMMENT_FIELDS, fields)
 
-        query = Query(operation, fields)
+        query = Query(operation=operation, fields=fields)
         query = query.build()
 
         return await self.request(query, variables)
@@ -189,7 +179,7 @@ class HTTPHandler:
 
         # fields.add_field('favourites', '\n'.join((anime, manga)))
 
-        query = Query(operation, fields)
+        query = Query(operation=operation, fields=fields)
         query = query.build()
 
         variables = {
@@ -198,23 +188,19 @@ class HTTPHandler:
 
         return await self.request(query, variables)
 
-    async def get_media(self, search: str, type: str=None):
+    async def get_media(self, search: str, type: Optional[str] = None):
         operation = QueryOperation(
             type="query", 
             variables={"$search": "String"}
         )
 
         fields = QueryFields("Media", search='$search')
-        if type:
+        if type is not None:
             fields.arguments['type'] = type
 
-        for field in ANIME_FIELDS:
-            fields.add_field(field)
+        self.build_query(MEDIA_FIELDS, fields)
 
-        fields.add_field('characters', 'nodes {' + ' '.join(CHARACTER_FIELDS) + ' }')
-        fields.add_field('studios', 'nodes {' + ' '.join(STUDIO_FIELDS) + ' }')
-
-        query = Query(operation, fields)
+        query = Query(operation=operation, fields=fields)
         query = query.build()
 
         variables = {
@@ -222,12 +208,6 @@ class HTTPHandler:
         }
 
         return await self.request(query, variables)
-
-    async def get_anime(self, search: str):
-        return await self.get_media(search, 'ANIME')
-
-    async def get_manga(self, search: str):
-        return await self.get_media(search, 'MANGA')
 
     async def get_studio(self, search: str):
         operation = QueryOperation(
@@ -236,13 +216,9 @@ class HTTPHandler:
         )
 
         fields = QueryFields("Studio", search='$search')
+        self.build_query(STUDIO_FIELDS, fields)
 
-        for field in STUDIO_FIELDS:
-            fields.add_field(field)
-
-        fields.add_field('media', 'nodes {' + ' '.join(ANIME_FIELDS) + ' }')
-
-        query = Query(operation, fields)
+        query = Query(operation=operation, fields=fields)
         query = query.build()
 
         variables = {
@@ -264,7 +240,7 @@ class HTTPHandler:
 
         fields.add_field('characters', 'nodes {' + ' '.join(CHARACTER_FIELDS) + ' }')
 
-        query = Query(operation, fields)
+        query = Query(operation=operation, fields=fields)
         query = query.build()
 
         variables = {
@@ -284,10 +260,32 @@ class HTTPHandler:
         for field in SITE_STATISTICS_FIELDS:
             fields.add_field(field)
 
-        query = Query(operation, fields)
+        query = Query(operation=operation, fields=fields)
         query = query.build()
 
         return await self.request(query, {})
+
+    async def get_character(self, search: str):
+        operation = QueryOperation(
+            type="query", 
+            variables={"$search": "String"}
+        )
+
+        fields = QueryFields("Character", search='$search')
+        self.build_query(CHARACTER_FIELDS, fields)
+
+        media = fields.add_field('media')
+        nodes = media.add_field('nodes')
+        self.build_query(MEDIA_FIELDS, nodes)
+
+        query = Query(operation=operation, fields=fields)
+        query = query.build()
+
+        variables = {
+            'search': search,
+        }
+
+        return await self.request(query, variables)
 
     def get_users(self, search: str, *, per_page: int=5, page: int=0):
         operation = QueryOperation(
@@ -296,49 +294,10 @@ class HTTPHandler:
         )
 
         fields = QueryFields("Page", page="$page", perPage="$perPage")
-
-        fields.add_field("pageInfo", "total", "currentPage", "lastPage", "hasNextPage", "perPage")
-        field = fields.add_field('users', *USER_FIELDS, search='$search')
-        
-        # media = ' '.join(ANIME_FIELDS)
-        # characters = ' '.join(CHARACTER_FIELDS) 
-        # studios = ' '.join(STUDIO_FIELDS)
-        # staff = ' '.join(STAFF_FIELDS)
-
-        # anime = 'anime { nodes {' + media + ' }}'
-        # manga = 'manga { nodes {' + media + ' }}'
-        # character = 'characters { nodes {' + characters + ' }}'
-        # studio = 'studios { nodes {' + studios + ' }}'
-        # staff = 'staff { nodes {' + staff + ' }}'
-
-        # field.add_field('favourites', ' '.join((anime, manga, character, studio, staff)))
-
-        query = Query(operation, fields)
-        query = query.build()
-
-        variables = {
-            'search': search,
-            'page': page,
-            'perPage': per_page
-        }
-
-        return Paginator(self, 'users', query, variables, User)
-
-    def get_medias(self, search: str, type: str=None, *, per_page: int=5, page: int=0):
-        operation = QueryOperation(
-            type="query", 
-            variables={"$page": "Int", "$perPage": "Int", "$search": "String"}
-        )
-
-        fields = QueryFields("Page", page="$page", perPage="$perPage")
         fields.add_field("pageInfo", "total", "currentPage", "lastPage", "hasNextPage", "perPage")
 
-        field = fields.add_field("media", *ANIME_FIELDS, search='$search')
-
-        if type:
-            field.arguments['type'] = type
-
-        field.add_field('characters', 'nodes {' + ' '.join(CHARACTER_FIELDS) + ' }')
+        field = fields.add_field('users', search='$search')
+        self.build_query(USER_FIELDS, field)
 
         query = Query(operation=operation, fields=fields)
         query = query.build()
@@ -349,33 +308,53 @@ class HTTPHandler:
             'perPage': per_page
         }
 
-        cls = Media
+        return Paginator(self, 'users', query, variables, User)
 
-        if type == 'ANIME':
-            cls = Anime
-        else:
-            cls = Manga
-
-        return Paginator(self, 'media', query, variables, cls)  
-
-    def get_animes(self, search: str, *, per_page: int=5, page: int=0):
-        return self.get_medias(search, 'ANIME', per_page=per_page, page=page)
-
-    def get_mangas(self, search: str, *, per_page: int=5, page: int=0):
-        return self.get_medias(search, 'MANGA', per_page=per_page, page=page)
-
-    def get_characters(self, search: str, *, per_page: int=5, page: int=0):
+    def get_medias(self, search: str, type: Optional[str] = None, *, per_page: int = 5, page: int = 0):
         operation = QueryOperation(
             type="query", 
             variables={"$page": "Int", "$perPage": "Int", "$search": "String"}
         )
 
         fields = QueryFields("Page", page="$page", perPage="$perPage")
-
         fields.add_field("pageInfo", "total", "currentPage", "lastPage", "hasNextPage", "perPage")
-        field = fields.add_field("characters", *CHARACTER_FIELDS, search='$search')
 
-        field.add_field('media', 'nodes {' + ' '.join(ANIME_FIELDS) + ' }')
+        field = fields.add_field("media", search='$search')
+        self.build_query(MEDIA_FIELDS, field)
+
+        if type:
+            field.arguments['type'] = type
+
+        characters = field.add_field('characters')
+        nodes = characters.add_field('nodes')
+        self.build_query(CHARACTER_FIELDS, nodes)
+
+        query = Query(operation=operation, fields=fields)
+        query = query.build()
+
+        variables = {
+            'search': search,
+            'page': page,
+            'perPage': per_page
+        }
+
+        return Paginator(self, 'media', query, variables, Media)  
+
+    def get_characters(self, search: str, *, per_page: int = 5, page: int = 0):
+        operation = QueryOperation(
+            type="query", 
+            variables={"$page": "Int", "$perPage": "Int", "$search": "String"}
+        )
+
+        fields = QueryFields("Page", page="$page", perPage="$perPage")
+        fields.add_field("pageInfo", "total", "currentPage", "lastPage", "hasNextPage", "perPage")
+
+        field = fields.add_field("characters", search='$search')
+        self.build_query(CHARACTER_FIELDS, field)
+
+        media = field.add_field('media')
+        nodes = media.add_field('nodes')
+        self.build_query(MEDIA_FIELDS, nodes)
 
         query = Query(operation=operation, fields=fields)
         query = query.build()
@@ -387,25 +366,3 @@ class HTTPHandler:
         }
 
         return Paginator(self, 'characters', query, variables, Character)
-
-    async def get_character(self, search: str):
-        operation = QueryOperation(
-            type="query", 
-            variables={"$search": "String"}
-        )
-
-        fields = QueryFields("Character", search='$search')
-
-        for field in CHARACTER_FIELDS:
-            fields.add_field(field)
-
-        fields.add_field('media', 'nodes {' + ' '.join(ANIME_FIELDS) + ' }')
-
-        query = Query(operation, fields)
-        query = query.build()
-
-        variables = {
-            'search': search,
-        }
-
-        return await self.request(query, variables)

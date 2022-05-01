@@ -1,12 +1,25 @@
+from __future__ import annotations
+
+from typing import Dict, List, Any, TYPE_CHECKING
 import datetime
-from typing import List
 
-from .utils import Data
 from .user import User
-from .media import _get_media
+from .media import Media
+from .utils import IDComparable
 
-class ThreadCategory:
-    def __init__(self, payload) -> None:
+if TYPE_CHECKING:
+    from .http import HTTPHandler
+
+__all__ = (
+    'ThreadCategory',
+    'ThreadComment',
+    'Thread'
+)
+
+class ThreadCategory(IDComparable):
+    __slots__ = ('name', 'id')
+
+    def __init__(self, payload: Dict[str, Any]) -> None:
         self.name: str = payload['name']
         self.id: int = payload['id']
 
@@ -14,9 +27,21 @@ class ThreadCategory:
         return f'<ThreadCategory id={self.id} name={self.name!r}>'
 
 class ThreadComment:
-    def __init__(self, payload, session) -> None:
+    __slots__ = (
+        '_payload',
+        '_http',
+        'id',
+        'user_id',
+        'thread_id',
+        'comment',
+        'like_count',
+        'is_liked',
+        'url'
+    )
+
+    def __init__(self, payload: Dict[str, Any], http: HTTPHandler) -> None:
         self._payload = payload
-        self._session = session
+        self._http = http
 
         self.id: int = payload['id']
         self.user_id: int = payload['userId']
@@ -38,25 +63,44 @@ class ThreadComment:
         return datetime.datetime.utcfromtimestamp(self._payload['updatedAt'])
 
     @property
-    def thread(self) -> 'Thread':
-        return Thread(self._payload['thread'], self._session)
+    def thread(self) -> Thread:
+        return Thread(self._payload['thread'], self._http)
 
     @property
     def user(self) -> User:
-        return User(self._payload['user'], self._session)
+        return User(self._payload['user'], self._http)
 
     @property
-    def likes(self) -> Data[User]:
-        return Data([User(like, self._session) for like in self._payload['likes']])
+    def likes(self) -> List[User]:
+        return [User(like, self._http) for like in self._payload['likes']]
     
     @property
-    def children(self) -> Data['ThreadComment']:
-        return Data([ThreadComment(child, self._session) for child in self._payload['children']])
+    def children(self) -> List[ThreadComment]:
+        return [ThreadComment(child, self._http) for child in self._payload['children']]
 
-class Thread:
-    def __init__(self, data, session) -> None:
-        self._payload = data
-        self._session = session
+class Thread(IDComparable):
+    __slots__ = (
+        '_payload',
+        '_http',
+        'id',
+        'url',
+        'title',
+        'body',
+        'user_id',
+        'reply_user_id',
+        'reply_comment_id',
+        'reply_count',
+        'view_count',
+        'is_locked',
+        'is_sticky',
+        'is_subscribed',
+        'is_liked',
+        'like_count'
+    )
+
+    def __init__(self, payload: Dict[str, Any], http: HTTPHandler) -> None:
+        self._payload = payload
+        self._http = http
 
         self.id: int = self._payload['id']
         self.url: str = self._payload['siteUrl']
@@ -76,9 +120,6 @@ class Thread:
     def __repr__(self) -> str:
         return f'<Thread id={self.id} reply_count={self.reply_count} view_count={self.view_count} like_count={self.like_count}>'
 
-    def __eq__(self, other):
-        return self.id == other.id
-
     @property
     def replied_at(self):
         return datetime.datetime.utcfromtimestamp(self._payload['repliedAt'])
@@ -96,25 +137,22 @@ class Thread:
         return [ThreadCategory(c) for c in self._payload['categories']]
 
     @property
-    def media_categories(self):
-        return [_get_media(c)(c, self._session) for c in self._payload['categories']]
+    def media_categories(self) -> List[Media]:
+        return [Media(c, self._http) for c in self._payload['categories']]
     
     @property
     def owner(self) -> User:
-        return User(self._payload['user'], self._session)
+        return User(self._payload['user'], self._http)
 
     @property
     def reply_user(self) -> User:
-        return User(self._payload['replyUser'], self._session)
+        return User(self._payload['replyUser'], self._http)
 
     @property
-    def likes(self) -> Data[User]:
-        return Data([User(like, self._session) for like in self._payload['likes']])
+    def likes(self) -> List[User]:
+        return [User(like, self._http) for like in self._payload['likes']]
     
     async def fetch_comments(self):
-        data = await self._session.get_thread_comments(self.id)
-        comments = Data([ThreadComment(comment, self._session) for comment in data['data']['ThreadComment']])
+        data = await self._http.get_thread_comments(self.id)
+        comments = [ThreadComment(comment, self._http) for comment in data['data']['ThreadComment']]
         return comments
-
-    def to_dict(self):
-        return self._payload.copy()

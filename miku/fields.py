@@ -1,14 +1,57 @@
+from typing import Tuple, Any
 
-ANIME_FIELDS = (
-    'title { romaji english native }',
+__all__ = (
+    'USER_FIELDS',
+    'STUDIO_FIELDS',
+    'CHARACTER_FIELDS',
+    'MEDIA_FIELDS',
+    'STAFF_FIELDS',
+    'SITE_STATISTICS_FIELDS',
+    'THREAD_FIELDS',
+    'THREAD_COMMENT_FIELDS'
+)
+
+USER_FIELDS: Tuple[Any, ...] = (
+    'id',
+    'name',
+    'about',
+    'bannerImage',
+    'bans',
+    'siteUrl',
+    'isFollower',
+    'isFollowing',
+    'isBlocked',
+    {'avatar': ('large', 'medium')},
+    {'options': ('titleLanguage', 'displayAdultContent', 'airingNotifications', 'profileColor', {'notificationOptions': ('type', 'enabled')})},
+)
+
+STUDIO_FIELDS: Tuple[str, ...] = (
+    'id',
+    'name',
+    'siteUrl',
+    'isAnimationStudio',
+    'favourites'
+)
+
+CHARACTER_FIELDS: Tuple[Any, ...] = (
+    'id',
+    'description',
+    'gender',
+    'age',
+    'siteUrl',
+    'favourites',
+    {'name': ('first', 'middle', 'last', 'full', 'native', 'alternative')},
+    {'image': ('large', 'medium')},
+    {'dateOfBirth': ('year', 'month', 'day')}
+)
+
+MEDIA_FIELDS: Tuple[Any, ...] = (
     'description',
     'averageScore',
     'status',
     'episodes',
     'siteUrl',
-    'coverImage { large medium }',
     'bannerImage',
-    'tags { name }'
     'idMal',
     'type',
     'format',
@@ -23,68 +66,41 @@ ANIME_FIELDS = (
     'trending',
     'isAdult',
     'synonyms',
+    {'title': ('romaji', 'english', 'native')},
+    {'coverImage': ('large', 'medium')},
+    {'tags': ('name',)},
+    {'characters': {'nodes': CHARACTER_FIELDS}},
+    {'studios': {'nodes': STUDIO_FIELDS}},
 )
 
-CHARACTER_FIELDS = (
-    'name { first middle last full native alternative }',
-    'id',
-    'image { large medium }',
-    'description',
-    'gender',
-    'dateOfBirth { year month day }',
-    'age',
-    'siteUrl',
-    'favourites',
-)
 
-USER_FIELDS = (
+STAFF_FIELDS: Tuple[Any, ...] = (
     'id',
-    'name',
-    'about',
-    'avatar { medium large }',
-    'bannerImage',
-    'bans',
-    'siteUrl',
-    'isFollower',
-    'isFollowing',
-    'isBlocked',
-    'options { titleLanguage displayAdultContent airingNotifications profileColor notificationOptions { type enabled } }'
-)
-
-STUDIO_FIELDS = (
-    'id',
-    'name',
-    'siteUrl',
-    'isAnimationStudio',
-    'favourites'
-)
-
-STAFF_FIELDS = (
-    'id',
-    'name { first middle last full native alternative }',
     'languageV2',
-    'image { medium large }',
     'description',
     'primaryOccupations',
     'gender',
-    'dateOfBirth { year month day }',
-    'dateOfDeath { year month day }',
     'homeTown',
     'siteUrl',
     'age',
+    {'name': ('first', 'middle', 'last', 'full', 'native', 'alternative')},
+    {'image': ('large', 'medium')},
+    {'dateOfBirth': ('year', 'month', 'day')},
+    {'dateOfDeath': ('year', 'month', 'day')}
 )
 
-SITE_STATISTICS_FIELDS = (
-    'users { nodes { date change count }}',
-    'anime { nodes { date change count }}',
-    'manga { nodes { date change count }}',
-    'characters { nodes { date change count }}',
-    'staff { nodes { date change count }}',
-    'studios { nodes { date change count }}',
-    'reviews { nodes { date change count }}'
+SITE_STATISTICS_FIELDS: Tuple[Any, ...] = (
+    {'users': {'nodes': ('date', 'change', 'count')}},
+    {'anime': {'nodes': ('date', 'change', 'count')}},
+    {'manga': {'nodes': ('date', 'change', 'count')}},
+    {'users': {'nodes': ('date', 'change', 'count')}},
+    {'characters': {'nodes': ('date', 'change', 'count')}},
+    {'staff': {'nodes': ('date', 'change', 'count')}},
+    {'studios': {'nodes': ('date', 'change', 'count')}},
+    {'reviews': {'nodes': ('date', 'change', 'count')}}
 )
 
-THREAD_FIELDS = (
+THREAD_FIELDS: Tuple[Any, ...] = (
     'id',
     'title',
     'body',
@@ -102,13 +118,13 @@ THREAD_FIELDS = (
     'createdAt',
     'updatedAt',
     'siteUrl',
-    'categories { name id }'
-    'user {' + ' '.join(USER_FIELDS) + ' }',
-    'replyUser {' + ' '.join(USER_FIELDS) + ' }',
-    'likes {' + ' '.join(USER_FIELDS) + ' }',
+    {'categories': ('id', 'name')},
+    {'user': USER_FIELDS},
+    {'replyUser': USER_FIELDS},
+    {'likes': USER_FIELDS}
 )
 
-COMMENT_FIELDS = (
+THREAD_COMMENT_FIELDS: Tuple[Any, ...] = (
     'id',
     'userId',
     'threadId',
@@ -118,8 +134,8 @@ COMMENT_FIELDS = (
     'createdAt',
     'updatedAt',
     'siteUrl',
-    'user {' + ' '.join(USER_FIELDS) + ' }',
-    'thread {' + ' '.join(THREAD_FIELDS) + ' }',
-    'likes {' + ' '.join(USER_FIELDS) + ' }',
-    'childComments'
+    'childComments',
+    {'user': USER_FIELDS},
+    {'likes': USER_FIELDS},
+    {'thread': THREAD_FIELDS}
 )

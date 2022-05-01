@@ -1,1 +1,0 @@
-An Unofficial AniList python API wrapper.
