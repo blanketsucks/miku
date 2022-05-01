@@ -126,12 +126,3 @@ class User(IDComparable):
             A [UserOptions](./user.md) object.
         """
         return UserOptions(self._payload['options'])
-
-    # @property
-    # def favourites(self) -> UserFavourites:
-    #     """
-    #     Returns:
-    #         A [UserFavourites](./user.md) object.
-    #     """
-    #     return UserFavourites(self._payload['favourites'], self._session)
-
