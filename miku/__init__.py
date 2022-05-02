@@ -1,5 +1,4 @@
 __author__ = 'blanketsucks'
-__version__ = '0.1'
 
 from .character import *
 from .client import *
@@ -14,4 +13,4 @@ from .studio import *
 from .threads import *
 from .user import *
 
-from . import fields, http, query, utils
+from . import fields, http, query, utils, types

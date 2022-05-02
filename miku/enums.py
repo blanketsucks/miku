@@ -43,6 +43,16 @@ class MediaSource(Enum):
     DOUJINSHI = 'DOUJINSHI'
     ANIME = 'ANIME'
 
+class MediaSeason(Enum):
+    WINTER = 'WINTER'
+    SPRING = 'SPRING'
+    SUMMER = 'SUMMER'
+    FALL = 'FALL'
+
+class MediaRankType(Enum):
+    RATED = 'RATED'
+    POPULAR = 'POPULAR'
+
 class UserTitleLanguage(Enum):
     ROMAJI = 'ROMAJI'
     ENGLISH = 'ENGLISH'

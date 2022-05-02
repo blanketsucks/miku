@@ -22,10 +22,7 @@ __all__ = (
 )
 
 
-class Page(List[T]):
-    """
-    A subclass of [Data](./data.md) that represents a page of data returned by a [Paginator](./paginator.md).
-    """
+class Page(Generic[T]):
     def __init__(
         self,
         type: str, 
@@ -33,16 +30,17 @@ class Page(List[T]):
         model: Type[T], 
         http: HTTPHandler,
     ) -> None:
-        self.payload = payload['data']['Page'][type]
-        self.info = payload['data']['Page']['pageInfo']
+        self.payload = payload['Page'][type]
+        self.info = payload['Page']['pageInfo']
         self.current_item = 0
         self.http = http
         self.model = model
 
-        super().__init__(self.payload)
-
     def __repr__(self):
         return '<Page number={0.number} entries={0.entries}>'.format(self)
+
+    def __getitem__(self, idx: int) -> T:
+        return self.model(self.payload[idx], self.http)
 
     def __iter__(self):
         return self
@@ -103,13 +101,11 @@ class Paginator(Generic[T]):
         vars = self.vars.copy()
         vars['page'] = page
 
-        json = await self.http.request(self.query, vars)
-        data = json['data']
-
+        data = await self.http.request(self.query, variables=vars)
         if not data:
             return None
 
-        return Page(self.type, json, self.model, self.http)
+        return Page(self.type, data, self.model, self.http)
 
     async def next(self) -> Optional[Page[T]]:
         if not self.has_next_page:
@@ -117,8 +113,7 @@ class Paginator(Generic[T]):
 
         self.vars['page'] = self.next_page
 
-        json = await self.http.request(self.query, self.vars)
-        data = json['data']
+        data = await self.http.request(self.query, variables=self.vars)
         if not data:
             return None
 
@@ -128,19 +123,17 @@ class Paginator(Generic[T]):
         self.next_page = page['currentPage'] + 1
         self.current_page = page['currentPage']
 
-        page = Page(self.type, json, self.model, self.http)
+        page = Page(self.type, data, self.model, self.http)
         self.pages[self.current_page] = page
 
         return page
 
     async def current(self) -> Optional[Page[T]]:
-        json = await self.http.request(self.query, self.vars)
-        data = json['data']
-
+        data = await self.http.request(self.query, variables=self.vars)
         if not data:
             return None
 
-        return Page(self.type, json, self.model, self.http)
+        return Page(self.type, data, self.model, self.http)
 
     async def previous(self) -> Optional[Page[T]]:
         vars = self.vars.copy()
@@ -150,18 +143,16 @@ class Paginator(Generic[T]):
             page = 0
 
         vars['page'] = page
-        json = await self.http.request(self.query, vars)
-        data = json['data']
-        
+        data = await self.http.request(self.query, variables=self.vars)
         if not data:
             return None
 
-        return Page(self.type, json, self.model, self.http)
+        return Page(self.type, data, self.model, self.http)
 
-    async def collect(self) -> List[Page[T]]:
-        return [page async for page in self]
+    async def collect(self) -> List[T]:
+        return [obj async for page in self for obj in page]
 
-    def __await__(self) -> Generator[Any, None, List[Page[T]]]:
+    def __await__(self) -> Generator[Any, None, List[T]]:
         return self.collect().__await__()
 
     def __aiter__(self):

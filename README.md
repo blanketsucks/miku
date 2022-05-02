@@ -2,9 +2,7 @@
 
 An Unofficial AniList python API wrapper.
 
-## Getting Started
-
-### Installation
+## Installation
 
 **Python 3.8 is required for the installation.**
 Installation is done via git:
@@ -17,7 +15,7 @@ py -3 -m pip install -U git+https://github.com/blanketsucks/miku
 ```
 -----
 
-### Basic Examples
+## Basic Examples
 
 Fetching an anime
 ```py
@@ -32,7 +30,7 @@ async def main():
 asyncio.run(main())
 ```
 
-Fetching a manga
+Fetching a manga (this includes light novels)
 ```py
 import miku
 import asyncio
@@ -54,22 +52,6 @@ async def main():
     async with miku.AnilistClient() as client:
         character = await client.fetch_character('Miku Nakano')
         print(character)
-
-asyncio.run(main())
-```
-
-Using your own `aiohttp.ClientSession` object
-```py
-import miku
-import asyncio
-import aiohttp
-
-async def main():
-    session = aiohttp.ClientSession()
-    
-    async with miku.AnilistClient.from_session(session) as client:
-        anime = await client.fetch_anime('Kanojo mo Kanojo')
-        print(anime)
 
 asyncio.run(main())
 ```

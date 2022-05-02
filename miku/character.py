@@ -1,31 +1,17 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, TypedDict, TYPE_CHECKING
+from typing import List, Optional, TYPE_CHECKING
 
 from .image import Image
+from . import types
 
 if TYPE_CHECKING:
     from .http import HTTPHandler
     from .media import Media
 
 __all__ = (
-    'Name',
-    'DateOfBirth',
-    'Character'
+    'Character',
 )
-
-class Name(TypedDict):
-    first: str
-    middle: str
-    last: str
-    full: str
-    native: str
-    alternatives: List[str]
-
-class DateOfBirth(TypedDict):
-    year: Optional[int]
-    month: Optional[int]
-    day: Optional[int]
 
 class Character:
     __slots__ = (
@@ -38,7 +24,7 @@ class Character:
         'age'
     )
 
-    def __init__(self, payload: Dict[str, Any], http: HTTPHandler) -> None:
+    def __init__(self, payload: types.Character, http: HTTPHandler) -> None:
         self._payload = payload
         self._http = http
 
@@ -49,7 +35,7 @@ class Character:
         self.age: str = self._payload['age']
 
     def __repr__(self) -> str:
-        return '<Character name={0.name.full!r}>'.format(self)
+        return f'<Character name={self.name["full"]!r}>'
 
     @property
     def apperances(self) -> Optional[List[Media]]:
@@ -68,7 +54,7 @@ class Character:
         return [Media(anime, self._http) for anime in animes]
 
     @property
-    def name(self) -> Name:
+    def name(self) -> types.Name:
         """
         Returns:
             A [CharacterName](./character.md) object
@@ -84,7 +70,7 @@ class Character:
         return Image(self._http.session, self._payload['image']) # type: ignore
 
     @property
-    def birth(self) -> DateOfBirth:
+    def birth(self) -> types.DateOfBirth:
         """
         Returns:
             A [CharacterBirthdate](./character.md) object.

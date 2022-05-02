@@ -5,7 +5,8 @@ import datetime
 
 from .user import User
 from .media import Media
-from .utils import IDComparable
+from .utils import IDComparable, cached_slot_property
+from . import types
 
 if TYPE_CHECKING:
     from .http import HTTPHandler
@@ -19,17 +20,18 @@ __all__ = (
 class ThreadCategory(IDComparable):
     __slots__ = ('name', 'id')
 
-    def __init__(self, payload: Dict[str, Any]) -> None:
+    def __init__(self, payload: types.ThreadCategory) -> None:
         self.name: str = payload['name']
         self.id: int = payload['id']
 
     def __repr__(self):
         return f'<ThreadCategory id={self.id} name={self.name!r}>'
 
-class ThreadComment:
+class ThreadComment(IDComparable):
     __slots__ = (
         '_payload',
         '_http',
+        '_cs_children',
         'id',
         'user_id',
         'thread_id',
@@ -39,7 +41,7 @@ class ThreadComment:
         'url'
     )
 
-    def __init__(self, payload: Dict[str, Any], http: HTTPHandler) -> None:
+    def __init__(self, payload: types.ThreadComment, http: HTTPHandler) -> None:
         self._payload = payload
         self._http = http
 
@@ -74,14 +76,16 @@ class ThreadComment:
     def likes(self) -> List[User]:
         return [User(like, self._http) for like in self._payload['likes']]
     
-    @property
+    @cached_slot_property('_cs_children')
     def children(self) -> List[ThreadComment]:
-        return [ThreadComment(child, self._http) for child in self._payload['children']]
+        return [ThreadComment(child, self._http) for child in self._payload['childComments']]
 
 class Thread(IDComparable):
     __slots__ = (
         '_payload',
         '_http',
+        '_cs_likes',
+        '_cs_media_categories',
         'id',
         'url',
         'title',
@@ -98,7 +102,7 @@ class Thread(IDComparable):
         'like_count'
     )
 
-    def __init__(self, payload: Dict[str, Any], http: HTTPHandler) -> None:
+    def __init__(self, payload: types.Thread, http: HTTPHandler) -> None:
         self._payload = payload
         self._http = http
 
@@ -118,7 +122,7 @@ class Thread(IDComparable):
         self.like_count: int = self._payload['likeCount']
 
     def __repr__(self) -> str:
-        return f'<Thread id={self.id} reply_count={self.reply_count} view_count={self.view_count} like_count={self.like_count}>'
+        return f'<Thread id={self.id} is_locked={self.is_locked}>'
 
     @property
     def replied_at(self):
@@ -137,10 +141,6 @@ class Thread(IDComparable):
         return [ThreadCategory(c) for c in self._payload['categories']]
 
     @property
-    def media_categories(self) -> List[Media]:
-        return [Media(c, self._http) for c in self._payload['categories']]
-    
-    @property
     def owner(self) -> User:
         return User(self._payload['user'], self._http)
 
@@ -148,11 +148,14 @@ class Thread(IDComparable):
     def reply_user(self) -> User:
         return User(self._payload['replyUser'], self._http)
 
-    @property
+    @cached_slot_property('_cs_likes')
     def likes(self) -> List[User]:
         return [User(like, self._http) for like in self._payload['likes']]
+
+    @cached_slot_property('_cs_media_categories')
+    def media_categories(self) -> List[Media]:
+        return [Media(c, self._http) for c in self._payload['mediaCategories']]
     
-    async def fetch_comments(self):
+    async def fetch_comments(self) -> List[ThreadComment]:
         data = await self._http.get_thread_comments(self.id)
-        comments = [ThreadComment(comment, self._http) for comment in data['data']['ThreadComment']]
-        return comments
+        return [ThreadComment(comment, self._http) for comment in data]

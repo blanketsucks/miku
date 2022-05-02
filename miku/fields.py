@@ -5,6 +5,7 @@ __all__ = (
     'STUDIO_FIELDS',
     'CHARACTER_FIELDS',
     'MEDIA_FIELDS',
+    'MEDIA_TREND_FIELDS',
     'STAFF_FIELDS',
     'SITE_STATISTICS_FIELDS',
     'THREAD_FIELDS',
@@ -48,10 +49,14 @@ CHARACTER_FIELDS: Tuple[Any, ...] = (
 MEDIA_FIELDS: Tuple[Any, ...] = (
     'description',
     'averageScore',
+    'meanScore',
+    'popularity',
+    'favourites',
     'status',
     'episodes',
     'siteUrl',
     'bannerImage',
+    'id',
     'idMal',
     'type',
     'format',
@@ -66,11 +71,27 @@ MEDIA_FIELDS: Tuple[Any, ...] = (
     'trending',
     'isAdult',
     'synonyms',
+    'hashtag',
+    {'trailer': ('id', 'site', 'thumbnail')},
     {'title': ('romaji', 'english', 'native')},
     {'coverImage': ('large', 'medium')},
-    {'tags': ('name',)},
+    {'tags': ('name', 'id', 'description', 'category', 'rank', 'isGeneralSpoiler', 'isMediaSpoiler', 'isAdult', 'userId')},
+    {'nextAiringEpisode': ('id', 'episode', 'mediaId', 'airingAt', 'timeUntilAiring')},
     {'characters': {'nodes': CHARACTER_FIELDS}},
     {'studios': {'nodes': STUDIO_FIELDS}},
+    {'streamingEpisodes': ('thumbnail', 'title', 'site', 'url')},
+    {'rankings': ('id', 'rank', 'year', 'format', 'type', 'season', 'allTime', 'context')}
+)
+
+MEDIA_TREND_FIELDS = (
+    'mediaId',
+    'date',
+    'trending',
+    'popularity',
+    'averageScore',
+    'inProgress',
+    'releasing',
+    'episode',
 )
 
 

@@ -1,5 +1,5 @@
+from typing import Any, Dict, Optional, Union, Tuple, List
 import asyncio
-from typing import Any, Dict, Optional, Union, Tuple
 import aiohttp
 
 from .query import Query, QueryField, QueryFields, QueryOperation
@@ -9,6 +9,7 @@ from .character import Character
 from .paginator import Paginator
 from .user import User
 from .errors import HTTPException, ERROR_MAPPING
+from . import types
 
 __all__ = (
     'HTTPHandler',
@@ -46,7 +47,7 @@ class HTTPHandler:
             data = await response.json()
             return data['access_token']
 
-    async def request(self, query: str, variables: Dict[str, Any]):
+    async def request(self, query: str, type: Optional[str] = None, variables: Optional[Dict[str, Any]] = None):
         headers = {'Content-Type': 'application/json', 'Accept': 'application/json',}
         if self.token:
             headers['Authorization'] = 'Bearer ' + self.token
@@ -55,19 +56,18 @@ class HTTPHandler:
         if not session:
             session = await self.create_session()
 
-        payload = {'query': query, 'variables': variables}
-
+        payload = {'query': query, 'variables': variables or {}}
         async with self.lock:
             async with session.post(self.URL, json=payload, headers=headers) as response:
                 data = await response.json()
                 if response.status == 200:
-                    return data
+                    return data['data'] if type is None else data['data'][type]
 
                 if response.status == 429:
                     retry_after = float(response.headers['Retry-After'])
                     await asyncio.sleep(retry_after)
 
-                    return await self.request(query, variables)
+                    return await self.request(query, type, variables)
 
                 error = ERROR_MAPPING.get(response.status, HTTPException)
                 raise error(response.status, data)
@@ -81,9 +81,9 @@ class HTTPHandler:
         return await self.session.close()
 
     def parse_args(self, id: Union[int, str]):
-        operation_variables = {}
-        variables = {}
-        arguments = {}
+        operation_variables: Dict[str, Any] = {}
+        variables: Dict[str, Any] = {}
+        arguments: Dict[str, Any] = {}
 
         if isinstance(id, str):
             operation_variables['$search'] = 'String'
@@ -108,120 +108,100 @@ class HTTPHandler:
             else:
                 obj.add_field(field)
 
-    async def get_thread_from_user_id(self, user_id: int):
-        operation = QueryOperation(
-            type="query", 
-            variables={"$userId": "Int"}
-        )
+    async def get_thread_from_user_id(self, user_id: int) -> types.Thread:
+        operation = QueryOperation(type='query', variables={'$userId': 'Int'})
 
-        fields = QueryFields("Thread", userId='$userId')
+        fields = QueryFields('Thread', userId='$userId')
         self.build_query(THREAD_FIELDS, fields)
 
         query = Query(operation=operation, fields=fields)
         query = query.build()
 
-        variables = {
-            'userId': user_id,
-        }
+        variables = {'userId': user_id}
+        return await self.request(query, 'Thread', variables)
 
-        return await self.request(query, variables)
-
-    async def get_thread(self, id: Union[str, int]):
-        operation_variables, variables, arguments = self.parse_args(id)
-
-        operation = QueryOperation(
-            type="query",
-            variables=operation_variables
-        )
+    async def get_thread(self, search: Union[str, int]) -> types.Thread:
+        operation_variables, variables, arguments = self.parse_args(search)
+        operation = QueryOperation(type='query', variables=operation_variables)
         
-        fields = QueryFields("Thread", **arguments)
+        fields = QueryFields('Thread', **arguments)
         self.build_query(THREAD_FIELDS, fields)
         
         query = Query(operation=operation, fields=fields)
         query = query.build()
 
-        return await self.request(query, variables)
+        return await self.request(query, 'Thread', variables)
 
-    async def get_thread_comments(self, id: int):
+    async def get_thread_comments(self, id: int) -> List[types.ThreadComment]:
         operation_variables, variables, arguments = self.parse_args(id)
+        operation = QueryOperation(type='query', variables=operation_variables)
 
-        operation = QueryOperation(
-            type="query",
-            variables=operation_variables
-        )
-
-        fields = QueryFields("ThreadComment", **arguments)
+        fields = QueryFields('ThreadComment', **arguments)
         self.build_query(THREAD_COMMENT_FIELDS, fields)
 
         query = Query(operation=operation, fields=fields)
         query = query.build()
 
-        return await self.request(query, variables)
+        return await self.request(query, 'ThreadComment', variables)
 
-    async def get_user(self, search: str):
-        operation = QueryOperation(
-            type="query", 
-            variables={"$search": "String"}
-        )
+    async def get_user(self, search: Union[str, int]) -> types.User:
+        operation_variables, variables, arguments = self.parse_args(search)
+        operation = QueryOperation(type='query', variables=operation_variables)
 
-        fields = QueryFields("User", search='$search')
+        fields = QueryFields('User', **arguments)
         self.build_query(USER_FIELDS, fields)
 
         query = Query(operation=operation, fields=fields)
         query = query.build()
 
-        variables = {
-            'search': search,
-        }
+        return await self.request(query, 'User', variables)
 
-        return await self.request(query, variables)
+    async def get_media(self, search: Union[str, int], type: Optional[str] = None) -> types.Media:
+        operation_variables, variables, arguments = self.parse_args(search)
+        operation = QueryOperation(type='query', variables=operation_variables)
 
-    async def get_media(self, search: str, type: Optional[str] = None):
-        operation = QueryOperation(
-            type="query", 
-            variables={"$search": "String"}
-        )
-
-        fields = QueryFields("Media", search='$search')
+        fields = QueryFields('Media', **arguments)
         if type is not None:
             fields.arguments['type'] = type
 
         self.build_query(MEDIA_FIELDS, fields)
+        query = Query(operation=operation, fields=fields)
+
+        query = query.build()
+        return await self.request(query, 'Media', variables)
+
+    async def get_media_trend(self, media_id: int) -> types.MediaTrend:
+        operation_variables, variables, arguments = self.parse_args(media_id)
+        operation = QueryOperation(type='query', variables=operation_variables)
+
+        fields = QueryFields('MediaTrend', **arguments)
+        self.build_query(MEDIA_TREND_FIELDS, fields)
 
         query = Query(operation=operation, fields=fields)
         query = query.build()
 
-        variables = {
-            'search': search,
-        }
+        return await self.request(query, 'MediaTrend', variables)
 
-        return await self.request(query, variables)
+    async def get_studio(self, search: Union[str, int]) -> types.Studio:
+        operation_variables, variables, arguments = self.parse_args(search)
+        operation = QueryOperation(type='query', variables=operation_variables)
 
-    async def get_studio(self, search: str):
-        operation = QueryOperation(
-            type="query", 
-            variables={"$search": "String"}
-        )
-
-        fields = QueryFields("Studio", search='$search')
+        fields = QueryFields('Studio', **arguments)
         self.build_query(STUDIO_FIELDS, fields)
 
         query = Query(operation=operation, fields=fields)
         query = query.build()
 
-        variables = {
-            'search': search,
-        }
+        return await self.request(query, 'Studio', variables)
 
-        return await self.request(query, variables)
-
-    async def get_staff(self, search: str):
+    async def get_staff(self, search: Union[str, int]) -> types.Staff:
+        operation_variables, variables, arguments = self.parse_args(search)
         operation = QueryOperation(
-            type="query", 
-            variables={"$search": "String"}
+            type='query', 
+            variables=operation_variables
         )
 
-        fields = QueryFields("Staff", search='$search')
+        fields = QueryFields('Staff', **arguments)
         self.build_query(STAFF_FIELDS, fields)
 
         characters = fields.add_field('characters')
@@ -231,17 +211,10 @@ class HTTPHandler:
         query = Query(operation=operation, fields=fields)
         query = query.build()
 
-        variables = {
-            'search': search,
-        }
+        return await self.request(query, 'Staff', variables)
 
-        return await self.request(query, variables)
-
-    async def get_site_statisics(self):
-        operation = QueryOperation(
-            type='query',
-            variables={}
-        )
+    async def get_site_statisics(self) -> types.SiteStatistics:
+        operation = QueryOperation(type='query')
 
         fields = QueryFields('SiteStatistics')
         self.build_query(SITE_STATISTICS_FIELDS, fields)
@@ -249,15 +222,13 @@ class HTTPHandler:
         query = Query(operation=operation, fields=fields)
         query = query.build()
 
-        return await self.request(query, {})
+        return await self.request(query, 'SiteStatistics')
 
-    async def get_character(self, search: str):
-        operation = QueryOperation(
-            type="query", 
-            variables={"$search": "String"}
-        )
+    async def get_character(self, search: Union[str, int]) -> types.Character:
+        operation_variables, variables, arguments = self.parse_args(search)
+        operation = QueryOperation(type='query', variables=operation_variables)
 
-        fields = QueryFields("Character", search='$search')
+        fields = QueryFields('Character', **arguments)
         self.build_query(CHARACTER_FIELDS, fields)
 
         media = fields.add_field('media')
@@ -267,20 +238,17 @@ class HTTPHandler:
         query = Query(operation=operation, fields=fields)
         query = query.build()
 
-        variables = {
-            'search': search,
-        }
+        variables = {'search': search}
+        return await self.request(query, 'Character', variables)
 
-        return await self.request(query, variables)
-
-    def get_users(self, search: str, *, per_page: int=5, page: int=0):
+    def get_users(self, search: str, *, per_page: int = 5, page: int = 0):
         operation = QueryOperation(
-            type="query", 
-            variables={"$page": "Int", "$perPage": "Int", "$search": "String"}
+            type='query', 
+            variables={'$page': 'Int', '$perPage': 'Int', '$search': 'String'}
         )
 
-        fields = QueryFields("Page", page="$page", perPage="$perPage")
-        fields.add_field("pageInfo", "total", "currentPage", "lastPage", "hasNextPage", "perPage")
+        fields = QueryFields('Page', page='$page', perPage='$perPage')
+        fields.add_field('pageInfo', 'total', 'currentPage', 'lastPage', 'hasNextPage', 'perPage')
 
         field = fields.add_field('users', search='$search')
         self.build_query(USER_FIELDS, field)
@@ -298,14 +266,14 @@ class HTTPHandler:
 
     def get_medias(self, search: str, type: Optional[str] = None, *, per_page: int = 5, page: int = 0):
         operation = QueryOperation(
-            type="query", 
-            variables={"$page": "Int", "$perPage": "Int", "$search": "String"}
+            type='query', 
+            variables={'$page': 'Int', '$perPage': 'Int', '$search': 'String'}
         )
 
-        fields = QueryFields("Page", page="$page", perPage="$perPage")
-        fields.add_field("pageInfo", "total", "currentPage", "lastPage", "hasNextPage", "perPage")
+        fields = QueryFields('Page', page='$page', perPage='$perPage')
+        fields.add_field('pageInfo', 'total', 'currentPage', 'lastPage', 'hasNextPage', 'perPage')
 
-        field = fields.add_field("media", search='$search')
+        field = fields.add_field('media', search='$search')
         self.build_query(MEDIA_FIELDS, field)
 
         if type:
@@ -328,14 +296,14 @@ class HTTPHandler:
 
     def get_characters(self, search: str, *, per_page: int = 5, page: int = 0):
         operation = QueryOperation(
-            type="query", 
-            variables={"$page": "Int", "$perPage": "Int", "$search": "String"}
+            type='query', 
+            variables={'$page': 'Int', '$perPage': 'Int', '$search': 'String'}
         )
 
-        fields = QueryFields("Page", page="$page", perPage="$perPage")
-        fields.add_field("pageInfo", "total", "currentPage", "lastPage", "hasNextPage", "perPage")
+        fields = QueryFields('Page', page='$page', perPage='$perPage')
+        fields.add_field('pageInfo', 'total', 'currentPage', 'lastPage', 'hasNextPage', 'perPage')
 
-        field = fields.add_field("characters", search='$search')
+        field = fields.add_field('characters', search='$search')
         self.build_query(CHARACTER_FIELDS, field)
 
         media = field.add_field('media')

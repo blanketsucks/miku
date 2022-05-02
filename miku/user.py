@@ -10,6 +10,7 @@ from .character import Character
 from .staff import Staff
 from .studio import Studio
 from .utils import IDComparable
+from . import types
 
 if TYPE_CHECKING:
     from .http import HTTPHandler
@@ -22,7 +23,7 @@ __all__ = (
 class UserNotificationOption:
     __slots__ = ('enabled', 'type')
 
-    def __init__(self, payload: Dict[str, Any]) -> None:
+    def __init__(self, payload: types.UserNotificationOption) -> None:
         self.enabled: bool = payload['enabled']
         self.type = UserNotificationOptionType(payload['type'])
 
@@ -38,7 +39,7 @@ class UserOptions:
         'notification_options'
     )
 
-    def __init__(self, payload: Dict[str, Any]) -> None:
+    def __init__(self, payload: types.UserOptions) -> None:
         self.title_language: UserTitleLanguage = UserTitleLanguage(payload['titleLanguage'])
         self.display_adult_content: bool = payload['displayAdultContent']
         self.airing_notifications: bool = payload['airingNotifications']
@@ -50,7 +51,7 @@ class UserOptions:
 class UserFavourites:
     __slots__ = ('_payload', '_http')
 
-    def __init__(self, payload: Dict[str, Any], http: HTTPHandler) -> None:
+    def __init__(self, payload: types.UserFavourites, http: HTTPHandler) -> None:
         self._payload = payload
         self._http = http
 
@@ -83,7 +84,7 @@ class User(IDComparable):
         'url'
     )
 
-    def __init__(self, payload: Dict[str, Any], http: HTTPHandler) -> None:
+    def __init__(self, payload: types.User, http: HTTPHandler) -> None:
         self._payload = payload
         self._http = http
 
@@ -98,7 +99,7 @@ class User(IDComparable):
         from .threads import Thread
 
         data = await self._http.get_thread_from_user_id(self.id)
-        return Thread(data['data']['Thread'], self._http)
+        return Thread(data, self._http)
 
     @property
     def avatar(self) -> Image:

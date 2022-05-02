@@ -1,12 +1,13 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, TYPE_CHECKING
+from typing import List, TYPE_CHECKING
 
-from .utils import IDComparable
+from .utils import IDComparable, cached_slot_property
+from .media import Media
+from . import types
 
 if TYPE_CHECKING:
     from .http import HTTPHandler
-    from .media import Media
 
 __all__ = 'Studio',
 
@@ -14,6 +15,7 @@ class Studio(IDComparable):
     __slots__ = (
         '_payload',
         '_http',
+        '_cs_media'
         'id',
         'name',
         'is_animation_studio',
@@ -21,7 +23,7 @@ class Studio(IDComparable):
         'favourites'
     )
 
-    def __init__(self, payload: Dict[str, Any], http: HTTPHandler) -> None:
+    def __init__(self, payload: types.Studio, http: HTTPHandler) -> None:
         self._payload = payload
         self._http = http
 
@@ -31,15 +33,7 @@ class Studio(IDComparable):
         self.url: str = payload['siteUrl']
         self.favourites: int = payload['favourites']
 
-    @property
+    @cached_slot_property('_cs_media')
     def medias(self) -> List[Media]:
-        """
-        The media the studio has worked on.
-
-        Returns:
-            A [Data](data.md) object.
-        """
-        from .media import Media
-
         medias = self._payload['media']['nodes']
         return [Media(media, self._http) for media in medias]

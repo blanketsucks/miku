@@ -2,25 +2,24 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, TYPE_CHECKING
 
-from .character import Name, DateOfBirth, Character
+from .character import Character
 from .image import Image
-from .utils import IDComparable
+from .utils import IDComparable, cached_slot_property
+from . import types
 
 if TYPE_CHECKING:
     from .http import HTTPHandler
 
 __all__ = (
-    'DateOfDeath',
-    'Staff'
+    'Staff',
 )
 
-class DateOfDeath(DateOfBirth):
-    pass
 
 class Staff(IDComparable):
     __slots__ = (
         '_payload',
-        '_http'
+        '_http',
+        '_cs_characters',
         'id',
         'language',
         'description',
@@ -31,7 +30,7 @@ class Staff(IDComparable):
         'url'
     )
 
-    def __init__(self, payload: Dict[str, Any], http: HTTPHandler) -> None:
+    def __init__(self, payload: types.Staff, http: HTTPHandler) -> None:
         self._payload = payload
         self._http = http
 
@@ -45,7 +44,7 @@ class Staff(IDComparable):
         self.url: str = self._payload['siteUrl']
 
     @property
-    def name(self) -> Name:
+    def name(self) -> types.Name:
         """
         The names of the staff member.
 
@@ -59,7 +58,7 @@ class Staff(IDComparable):
         return Image(self._http.session, self._payload['image']) # type: ignore
 
     @property
-    def birth(self) -> DateOfBirth:
+    def birth(self) -> types.DateOfBirth:
         """
         Returns:
             A subclass of [CharacterBirthdate](./character.md).
@@ -67,14 +66,14 @@ class Staff(IDComparable):
         return self._payload['dateOfBirth']
 
     @property
-    def death(self) -> DateOfDeath:
+    def death(self) -> types.DateOfDeath:
         """
         Returns:
             A subclass of [CharacterBirthdate](./character.md).
         """
         return self._payload['dateOfDeath']
 
-    @property
+    @cached_slot_property('_cs_characters')
     def characters(self) -> List[Character]:
         """
         Characters voiced by the actor.
