@@ -213,12 +213,6 @@ class User(IDComparable):
     def __repr__(self) -> str:
         return '<User id={0.id} name={0.name!r}>'.format(self)
 
-    async def fetch_thread(self):
-        from .threads import Thread
-
-        data = await self._http.get_thread_from_user_id(self.id)
-        return Thread(data, self._http)
-
     @property
     def avatar(self) -> Image:
         return Image(self._http.session, self._payload['avatar']) # type: ignore
@@ -246,6 +240,12 @@ class User(IDComparable):
     @property
     def media_list_options(self) -> MediaListOptions:
         return MediaListOptions(self._payload['mediaListOptions'])
+
+    async def fetch_thread(self):
+        from .threads import Thread
+
+        data = await self._http.get_thread_from_user_id(self.id)
+        return Thread(data, self._http)
 
     def fetch_media_list(
         self, *, type: MediaType, per_chunk: int = 50, chunk: int = 0
