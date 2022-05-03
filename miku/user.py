@@ -247,5 +247,7 @@ class User(IDComparable):
     def media_list_options(self) -> MediaListOptions:
         return MediaListOptions(self._payload['mediaListOptions'])
 
-    def fetch_media_list(self, type: MediaType, *, per_chunk: int = 50, chunk: int = 0) -> ChunkPaginator[MediaListGroup]:
+    def fetch_media_list(
+        self, *, type: MediaType, per_chunk: int = 50, chunk: int = 0
+    ) -> ChunkPaginator[MediaListGroup]:
         return self._http.get_media_list_collection(self.id, type.value, per_chunk, chunk)
