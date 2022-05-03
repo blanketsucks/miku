@@ -22,13 +22,32 @@ __all__ = (
 )
 
 class MediaTrend:
+    __slots__ = (
+        '_payload',
+        'media_id',
+        'episode',
+        'releasing',
+        'in_progress',
+        'popularity',
+        'average_score'
+    )
 
     def __init__(self, payload: types.MediaTrend) -> None:
+        self._payload = payload
+
         self.media_id: int = payload['mediaId']
         self.episode: int = payload['episode']
         self.releasing: bool = payload['releasing']
         self.in_progress: int = payload['inProgress']
+        self.popularity: int = payload['popularity']
+        self.average_score: int = payload['averageScore']
 
+    def __repr__(self) -> str:
+        return f'<MediaTrend media_id={self.media_id} episode={self.episode} average_score={self.average_score}>'
+
+    @property
+    def date(self) -> datetime.datetime:
+        return datetime.datetime.utcfromtimestamp(self._payload['date'])
 
 class MediaTitle:
     __slots__ = ('romaji', 'english', 'native')
@@ -264,6 +283,10 @@ class Media(IDComparable):
 
         characters = self._payload['characters']['nodes']
         return [Character(data, self._http) for data in characters]
+
+    async def fetch_trend(self) -> MediaTrend:
+        data = await self._http.get_media_trend(self.id)
+        return MediaTrend(data)
 
 class Anime(Media):
     pass

@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from typing import Any, Literal, Optional, Union, overload
+from typing import Any, List, Literal, Optional, Union, overload
 import aiohttp
 import asyncio
 
 from .http import HTTPHandler
-from .media import Anime, Media, Manga
+from .media import Anime, Media, Manga, MediaTag
 from .paginator import Paginator
 from .character import Character
 from .user import User
@@ -120,6 +120,13 @@ class AnilistClient:
     async def fetch_thread(self, search: Union[int, str]):
         data = await self.http.get_thread(search)
         return Thread(data, self.http)
+
+    async def fetch_all_tags(self) -> List[MediaTag]:
+        data = await self.http.get_all_tags()
+        return [MediaTag(tag) for tag in data]
+    
+    async def fetch_all_genres(self) -> List[str]:
+        return await self.http.get_all_genres()
 
     def users(self, name: str, *, per_page: int= 5, page: int = 0) -> Paginator[User]:
         return self.http.get_users(name, per_page=per_page, page=page)

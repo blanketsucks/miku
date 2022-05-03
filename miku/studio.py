@@ -33,6 +33,9 @@ class Studio(IDComparable):
         self.url: str = payload['siteUrl']
         self.favourites: int = payload['favourites']
 
+    def __repr__(self) -> str:
+        return f'<Studio id={self.id} name={self.name!r}>'
+
     @cached_slot_property('_cs_media')
     def medias(self) -> List[Media]:
         medias = self._payload['media']['nodes']

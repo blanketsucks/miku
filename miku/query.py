@@ -84,9 +84,6 @@ class QueryFields:
         return field
     
     def build(self):
-        if not self.fields:
-            raise QueryIncomplete('fields')
-
         fields = ' '.join([field.build() for field in self.fields])
         args = ', '.join([f'{k}: {v}' for k, v in self.arguments.items()])
 
@@ -94,7 +91,8 @@ class QueryFields:
         if self.arguments:
             query += f'({args}) '
 
-        query +=  '{ ' + fields + ' }'
+        if fields:
+            query +=  '{ ' + fields + ' }'
 
         return query
 

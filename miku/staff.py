@@ -43,6 +43,10 @@ class Staff(IDComparable):
         self.home_town: str = self._payload['homeTown']
         self.url: str = self._payload['siteUrl']
 
+    def __repr__(self) -> str:
+        name = self.name['full']
+        return f'<Staff id={self.id} name={name!r}>'
+
     @property
     def name(self) -> types.Name:
         """

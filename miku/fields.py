@@ -2,14 +2,27 @@ from typing import Tuple, Any
 
 __all__ = (
     'USER_FIELDS',
+    'USER_FAVOURITES_FIELDS',
     'STUDIO_FIELDS',
     'CHARACTER_FIELDS',
     'MEDIA_FIELDS',
+    'MEDIA_TAG_FIELDS',
     'MEDIA_TREND_FIELDS',
     'STAFF_FIELDS',
     'SITE_STATISTICS_FIELDS',
     'THREAD_FIELDS',
-    'THREAD_COMMENT_FIELDS'
+    'THREAD_COMMENT_FIELDS',
+    'MEDIA_LIST_FIELDS',
+    'MEDIA_LIST_GROUP_FIELDS',
+    'MEDIA_LIST_COLLECTION_FIELDS'
+)
+
+MEDIA_LIST_TYPE_OPTION_FIELDS = (
+    'sectionOrder',
+    'splitCompletedSectionByFormat',
+    'customLists',
+    'advancedScoring',
+    'advancedScoringEnabled'
 )
 
 USER_FIELDS: Tuple[Any, ...] = (
@@ -22,8 +35,13 @@ USER_FIELDS: Tuple[Any, ...] = (
     'isFollower',
     'isFollowing',
     'isBlocked',
+    'unreadNotificationCount',
+    'donatorTier',
+    'donatorBadge',
+    'moderatorRoles',
     {'avatar': ('large', 'medium')},
     {'options': ('titleLanguage', 'displayAdultContent', 'airingNotifications', 'profileColor', {'notificationOptions': ('type', 'enabled')})},
+    {'mediaListOptions': ('scoreFormat', 'rowOrder', {'animeList': MEDIA_LIST_TYPE_OPTION_FIELDS}, {'mangaList': MEDIA_LIST_TYPE_OPTION_FIELDS})},
 )
 
 STUDIO_FIELDS: Tuple[str, ...] = (
@@ -44,6 +62,10 @@ CHARACTER_FIELDS: Tuple[Any, ...] = (
     {'name': ('first', 'middle', 'last', 'full', 'native', 'alternative')},
     {'image': ('large', 'medium')},
     {'dateOfBirth': ('year', 'month', 'day')}
+)
+
+MEDIA_TAG_FIELDS: Tuple[Any, ...] = (
+    'name', 'id', 'description', 'category', 'rank', 'isGeneralSpoiler', 'isMediaSpoiler', 'isAdult', 'userId'
 )
 
 MEDIA_FIELDS: Tuple[Any, ...] = (
@@ -75,7 +97,7 @@ MEDIA_FIELDS: Tuple[Any, ...] = (
     {'trailer': ('id', 'site', 'thumbnail')},
     {'title': ('romaji', 'english', 'native')},
     {'coverImage': ('large', 'medium')},
-    {'tags': ('name', 'id', 'description', 'category', 'rank', 'isGeneralSpoiler', 'isMediaSpoiler', 'isAdult', 'userId')},
+    {'tags': MEDIA_TAG_FIELDS},
     {'nextAiringEpisode': ('id', 'episode', 'mediaId', 'airingAt', 'timeUntilAiring')},
     {'characters': {'nodes': CHARACTER_FIELDS}},
     {'studios': {'nodes': STUDIO_FIELDS}},
@@ -159,4 +181,48 @@ THREAD_COMMENT_FIELDS: Tuple[Any, ...] = (
     {'user': USER_FIELDS},
     {'likes': USER_FIELDS},
     {'thread': THREAD_FIELDS}
+)
+
+USER_FAVOURITES_FIELDS: Tuple[Any, ...] = (
+    # Apparently the anime and manga fields just completely break the API so they are not included
+    # for now until I figure out how to get them working.
+    {'characters': {'nodes': CHARACTER_FIELDS}},
+    {'staff': {'nodes': STAFF_FIELDS}},
+    {'studios': {'nodes': STUDIO_FIELDS}},
+)
+
+MEDIA_LIST_FIELDS: Tuple[Any, ...] = (
+    'id',
+    'userId',
+    'mediaId',
+    'status',
+    'score',
+    'progress',
+    'progressVolumes',
+    'repeat',
+    'notes',
+    'private',
+    'priority',
+    'notes',
+    'hiddenFromStatusLists',
+    'customLists',
+    'advancedScores',
+    'updatedAt',
+    'createdAt',
+    {'startedAt': ('year', 'month', 'day')},
+    {'completedAt': ('year', 'month', 'day')},
+    {'media': MEDIA_FIELDS},
+)
+
+MEDIA_LIST_GROUP_FIELDS: Tuple[Any, ...] = (
+    'name',
+    'isCustomList',
+    'isSplitCompletedList',
+    'status',
+    {'entries': MEDIA_LIST_FIELDS},
+)
+
+MEDIA_LIST_COLLECTION_FIELDS: Tuple[Any, ...] = (
+    'hasNextChunk',
+    {'lists': MEDIA_LIST_GROUP_FIELDS},
 )

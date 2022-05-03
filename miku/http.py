@@ -7,7 +7,8 @@ from .fields import *
 from .media import Media
 from .character import Character
 from .paginator import Paginator
-from .user import User
+from .chunk import ChunkPaginator
+from .user import User, MediaListGroup
 from .errors import HTTPException, ERROR_MAPPING
 from . import types
 
@@ -19,16 +20,12 @@ class HTTPHandler:
     URL = 'https://graphql.anilist.co'
 
     def __init__(self, loop: asyncio.AbstractEventLoop, session: Optional[aiohttp.ClientSession] = None) -> None:
-        if session:
-            ret = 'Expected an aiohttp.ClientSession instance but got {0.__class__.__name__!r} instead'
-            raise TypeError(ret.format(session))       
-
         self.session = session
         self.loop = loop
         self.token: Optional[str] = None
         self.lock = asyncio.Lock()
 
-    async def create_session(self):
+    async def create_session(self) -> aiohttp.ClientSession:
         self.session = session = aiohttp.ClientSession(loop=self.loop)
         return session
 
@@ -56,7 +53,10 @@ class HTTPHandler:
         if not session:
             session = await self.create_session()
 
-        payload = {'query': query, 'variables': variables or {}}
+        payload: Dict[str, Any] = {'query': query}
+        if variables:
+            payload['variables'] = variables
+
         async with self.lock:
             async with session.post(self.URL, json=payload, headers=headers) as response:
                 data = await response.json()
@@ -108,6 +108,24 @@ class HTTPHandler:
             else:
                 obj.add_field(field)
 
+    async def get_all_tags(self) -> List[types.MediaTag]:
+        operation = QueryOperation(type='query')
+
+        fields = QueryFields('MediaTagCollection')
+        self.build_query(MEDIA_TAG_FIELDS, fields)
+
+        query = Query(operation=operation, fields=fields)
+        query = query.build()
+
+        return await self.request(query, 'MediaTagCollection')
+
+    async def get_all_genres(self) -> List[str]:
+        operation = QueryOperation(type='query')
+        fields = QueryFields('GenreCollection')
+
+        query = Query(operation=operation, fields=fields).build()
+        return await self.request(query, 'GenreCollection')
+
     async def get_thread_from_user_id(self, user_id: int) -> types.Thread:
         operation = QueryOperation(type='query', variables={'$userId': 'Int'})
 
@@ -151,6 +169,9 @@ class HTTPHandler:
         fields = QueryFields('User', **arguments)
         self.build_query(USER_FIELDS, fields)
 
+        favourites = fields.add_field('favourites')
+        self.build_query(USER_FAVOURITES_FIELDS, favourites)
+
         query = Query(operation=operation, fields=fields)
         query = query.build()
 
@@ -171,15 +192,15 @@ class HTTPHandler:
         return await self.request(query, 'Media', variables)
 
     async def get_media_trend(self, media_id: int) -> types.MediaTrend:
-        operation_variables, variables, arguments = self.parse_args(media_id)
-        operation = QueryOperation(type='query', variables=operation_variables)
+        operation = QueryOperation(type='query', variables={'$mediaId': 'Int'})
 
-        fields = QueryFields('MediaTrend', **arguments)
+        fields = QueryFields('MediaTrend', mediaId='$mediaId')
         self.build_query(MEDIA_TREND_FIELDS, fields)
 
         query = Query(operation=operation, fields=fields)
         query = query.build()
 
+        variables = {'mediaId': media_id}
         return await self.request(query, 'MediaTrend', variables)
 
     async def get_studio(self, search: Union[str, int]) -> types.Studio:
@@ -320,3 +341,31 @@ class HTTPHandler:
         }
 
         return Paginator(self, 'characters', query, variables, Character)
+
+    def get_media_list_collection(
+        self, user_id: int, type: str, per_chunk: int = 50, chunk: int = 0
+    ) -> ChunkPaginator[MediaListGroup]:
+        operation = QueryOperation(
+            type='query', 
+            variables={'$userId': 'Int', '$type': 'MediaType', '$chunk': 'Int', '$perChunk': 'Int'}
+        )
+
+        fields = QueryFields(
+            name='MediaListCollection', 
+            userId='$userId', 
+            type='$type', 
+            chunk='$chunk', 
+            perChunk='$perChunk'
+        )
+
+        self.build_query(MEDIA_LIST_COLLECTION_FIELDS, fields)
+        query = Query(operation=operation, fields=fields).build()
+
+        variables = {
+            'userId': user_id,
+            'type': type,
+            'chunk': chunk,
+            'perChunk': per_chunk
+        }
+
+        return ChunkPaginator(self, MediaListGroup, 'MediaListCollection', variables, query)

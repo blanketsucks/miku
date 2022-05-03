@@ -7,6 +7,9 @@ __all__ = (
     'MediaSource',
     'UserTitleLanguage',
     'UserNotificationOptionType',
+    'ScoreFormat',
+    'ModeratorRole',
+    'MediaListStatus',
 )
 
 class MediaFormat(Enum):
@@ -76,3 +79,33 @@ class UserNotificationOptionType(Enum):
     THREAD_COMMENT_LIKE = 'THREAD_COMMENT_LIKE'
     ACTIVITY_REPLY_SUBSCRIBED = 'ACTIVITY_REPLY_SUBSCRIBED'
     RELATED_MEDIA_ADDITION = 'RELATED_MEDIA_ADDITION'
+
+class ScoreFormat(Enum):
+    POINT_100 = 'POINT_100'
+    POINT_10_DECIMAL = 'POINT_10_DECIMAL'
+    POINT_10 = 'POINT_10'
+    POINT_5 = 'POINT_5'
+    POINT_3 = 'POINT_3'
+
+class ModeratorRole(Enum):
+    ADMIN = 'ADMIN'
+    LEAD_DEVELOPER = 'LEAD_DEVELOPER'
+    DEVELOPER = 'DEVELOPER'
+    LEAD_COMMUNITY = 'LEAD_COMMUNITY'
+    COMMUNITY = 'COMMUNITY'
+    DISCORD_COMMUNITY = 'DISCORD_COMMUNITY'
+    LEAD_ANIME_DATA = 'LEAD_ANIME_DATA'
+    ANIME_DATA = 'ANIME_DATA'
+    LEAD_MANGA_DATA = 'LEAD_MANGA_DATA'
+    MANGA_DATA = 'MANGA_DATA'
+    LEAD_SOCIAL_MEDIA = 'LEAD_SOCIAL_MEDIA'
+    SOCIAL_MEDIA = 'SOCIAL_MEDIA'
+    RETIRED = 'RETIRED'
+
+class MediaListStatus(Enum):
+    CURRENT = 'CURRENT'
+    PLANNING = 'PLANNING'
+    COMPLETED = 'COMPLETED'
+    DROPPED = 'DROPPED'
+    PAUSED = 'PAUSED'
+    REPEATING = 'REPEATING'
