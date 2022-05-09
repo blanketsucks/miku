@@ -65,7 +65,7 @@ class HTTPHandler:
             async with session.post(self.URL, json=payload, headers=headers) as response:
                 data = await response.json()
                 if response.status == 200:
-                    return data['data'] if type is None else data['data'][rtype]
+                    return data['data'] if rtype is None else data['data'][rtype]
 
                 if response.status == 429:
                     retry_after = float(response.headers['Retry-After'])
