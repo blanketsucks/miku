@@ -1,18 +1,12 @@
 import setuptools
 
 setuptools.setup(
-    name="miku",
+    name='miku',
     author='blanketsucks',
     url='https://github.com/blanketsucks/miku',
     license='MIT',
-    version='0.1',
-    packages=[
-        'miku',
-        'miku.sync'
-    ],
-    install_requires=[
-        'requests',
-        'aiohttp',
-    ],
+    version='1.0.0',
+    packages=['miku', 'miku.types'],
+    install_requires=['aiohttp'],
     python_requires='>=3.8',
 )

@@ -3,20 +3,14 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, List, TypedDict, Optional
 
 from .image import Image
-from .character import DateOfBirth, Name
+from .common import Name, FuzzyDate
 
 if TYPE_CHECKING:
     from .nodes import CharacterNodes
 
 __all__ = (
-    'DateOfDeath',
-    'Staff'
+    'Staff',
 )
-
-class DateOfDeath(TypedDict):
-    year: Optional[int]
-    month: Optional[int]
-    day: Optional[int]
 
 class Staff(TypedDict):
     id: int
@@ -29,6 +23,6 @@ class Staff(TypedDict):
     homeTown: str
     image: Image
     name: Name
-    dateOfBirth: DateOfBirth
-    dateOfDeath: DateOfDeath
+    dateOfBirth: FuzzyDate
+    dateOfDeath: FuzzyDate
     characters: CharacterNodes

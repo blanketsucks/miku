@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, TYPE_CHECKING
+from typing import List, Optional, TYPE_CHECKING
 import datetime
 
 from .enums import MediaFormat, MediaRankType, MediaSource, MediaStatus, MediaType, MediaSeason
@@ -16,6 +16,10 @@ __all__ = (
     'MediaTitle',
     'MediaTrailer',
     'MediaTag',
+    'MediaAiringSchedule',
+    'MediaStreamingEpisode',
+    'MediaTrend',
+    'MediaRank',
     'Media',
     'Manga',
     'Anime'
@@ -271,11 +275,11 @@ class Media(IDComparable):
 
     @property
     def banner(self) -> Image:
-        return Image(self._http.session, self._payload['bannerImage']) # type: ignore
+        return Image.from_url(self._http.session, self._payload['bannerImage'])
 
     @property
     def cover(self) -> Image:
-        return Image(self._http.session, self._payload['coverImage']) # type: ignore
+        return Image(self._http.session, self._payload['coverImage'])
 
     @cached_slot_property('_cs_characters')
     def characters(self) -> List[Character]:

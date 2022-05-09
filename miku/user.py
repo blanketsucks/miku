@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
-import functools
+from typing import TYPE_CHECKING, Any, List, Optional
 
 from .enums import MediaType, UserNotificationOptionType, UserTitleLanguage, ScoreFormat, ModeratorRole, MediaListStatus
 from .image import Image
@@ -10,15 +9,20 @@ from .character import Character
 from .staff import Staff
 from .studio import Studio
 from .utils import IDComparable, cached_slot_property
-from .chunk import ChunkPaginator
+from .paginator import ChunkPaginator
 from . import types
 
 if TYPE_CHECKING:
     from .http import HTTPHandler
 
 __all__ = (
+    'MediaListTypeOptions',
+    'MediaListOptions',
+    'MediaList',
+    'MediaListGroup',
     'UserNotificationOption',
     'UserOptions',
+    'UserFavourites',
     'User'
 )
 
@@ -117,7 +121,7 @@ class MediaListGroup:
         self.is_split_custom_list: bool = payload['isSplitCompletedList']
 
     def __repr__(self) -> str:
-        return f'<MediaListGroup name={self.name!r}>'
+        return f'<MediaListGroup name={self.name!r} entries={len(self.entries)}>'
 
     @property
     def status(self) -> MediaListStatus:
@@ -215,14 +219,12 @@ class User(IDComparable):
 
     @property
     def avatar(self) -> Image:
-        return Image(self._http.session, self._payload['avatar']) # type: ignore
+        return Image(self._http.session, self._payload['avatar'])
 
     @property
     def banner(self) -> Optional[Image]:
-        if not self._payload['bannerImage']:
-            return None
-
-        return Image(self._http.session, self._payload['bannerImage']) # type: ignore
+        image = self._payload['bannerImage']
+        return Image.from_url(self._http.session, image) if image else None
  
     @property
     def options(self) -> UserOptions:

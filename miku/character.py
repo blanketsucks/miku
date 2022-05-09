@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-from typing import List, Optional, TYPE_CHECKING
+from typing import List, TYPE_CHECKING
 
 from .image import Image
+from .common import Name, FuzzyDate
 from . import types
 
 if TYPE_CHECKING:
@@ -35,44 +36,23 @@ class Character:
         self.age: str = self._payload['age']
 
     def __repr__(self) -> str:
-        return f'<Character name={self.name["full"]!r}>'
+        return f'<Character name={self.name.full!r}>'
 
     @property
-    def apperances(self) -> Optional[List[Media]]:
-        """
-        This character's apperances on difference mangas and animes.
-
-        Returns:
-            A list of [Media](./media.md).
-        """
-        if not self._payload.get('media'):
-            return None
-
+    def apperances(self) -> List[Media]:
         from .media import Media
 
         animes = self._payload['media']['nodes']
         return [Media(anime, self._http) for anime in animes]
 
     @property
-    def name(self) -> types.Name:
-        """
-        Returns:
-            A [CharacterName](./character.md) object
-        """
-        return self._payload['name']
+    def name(self) -> Name:
+        return Name(self._payload['name'])
 
     @property
     def image(self) -> Image:
-        """
-        Returns:
-            An [Image](./image.md) object.
-        """
-        return Image(self._http.session, self._payload['image']) # type: ignore
+        return Image(self._http.session, self._payload['image'])
 
     @property
-    def birth(self) -> types.DateOfBirth:
-        """
-        Returns:
-            A [CharacterBirthdate](./character.md) object.
-        """
-        return self._payload['dateOfBirth']
+    def birth(self) -> FuzzyDate:
+        return FuzzyDate(self._payload['dateOfBirth'])

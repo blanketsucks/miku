@@ -1,10 +1,11 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, TYPE_CHECKING
+from typing import List, TYPE_CHECKING
 
 from .character import Character
 from .image import Image
 from .utils import IDComparable, cached_slot_property
+from .common import Name, FuzzyDate
 from . import types
 
 if TYPE_CHECKING:
@@ -44,46 +45,25 @@ class Staff(IDComparable):
         self.url: str = self._payload['siteUrl']
 
     def __repr__(self) -> str:
-        name = self.name['full']
-        return f'<Staff id={self.id} name={name!r}>'
+        return f'<Staff id={self.id} name={self.name.full!r}>'
 
     @property
-    def name(self) -> types.Name:
-        """
-        The names of the staff member.
-
-        Returns:
-            A subclass of [CharacterName](./character.md).
-        """
-        return self._payload['name']
+    def name(self) -> Name:
+        return Name(self._payload['name'])
 
     @property
     def image(self) -> Image:
         return Image(self._http.session, self._payload['image']) # type: ignore
 
     @property
-    def birth(self) -> types.DateOfBirth:
-        """
-        Returns:
-            A subclass of [CharacterBirthdate](./character.md).
-        """
-        return self._payload['dateOfBirth']
+    def birth(self) -> FuzzyDate:
+        return FuzzyDate(self._payload['dateOfBirth'])
 
     @property
-    def death(self) -> types.DateOfDeath:
-        """
-        Returns:
-            A subclass of [CharacterBirthdate](./character.md).
-        """
-        return self._payload['dateOfDeath']
+    def death(self) -> FuzzyDate:
+        return FuzzyDate(self._payload['dateOfDeath'])
 
     @cached_slot_property('_cs_characters')
     def characters(self) -> List[Character]:
-        """
-        Characters voiced by the actor.
-
-        Returns:
-            A [Data](./data.md) object.
-        """
         return [Character(character, self._http) for character in self._payload['characters']['nodes']]
 

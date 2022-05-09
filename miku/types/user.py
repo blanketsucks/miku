@@ -164,7 +164,7 @@ class User(TypedDict):
     about: str
     siteUrl: str
     options: UserOptions
-    bannerImage: Image
+    bannerImage: str
     avatar: Image
     bans: List[Dict[str, Any]]
     mediaListOptions: MediaListOptions

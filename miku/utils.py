@@ -1,16 +1,42 @@
 from __future__ import annotations
-from ctypes import Union
 
-from typing import Any, Callable, Generic, Optional, TypeVar, Type, overload
+from typing import (
+    TYPE_CHECKING, 
+    Any,
+    AsyncIterable,
+    AsyncIterator,
+    Callable, 
+    Coroutine, 
+    Generic,
+    Iterator, 
+    List, 
+    Optional, 
+    TypeVar, 
+    Type, 
+    overload, 
+    Iterable,
+    Union
+)
+import asyncio
+
+if TYPE_CHECKING:
+    from typing_extensions import ParamSpec
+
+    P = ParamSpec('P')
 
 __all__ = (
     'IDComparable',
     'CachedSlotProperty',
     'cached_slot_property',
+    'maybe_coroutine',
+    'find',
 )
 
 T = TypeVar('T')
 T_co = TypeVar('T_co', covariant=True)
+
+Coro = Coroutine[Any, Any, T]
+MaybeAwaitable = Union[T, Coroutine[Any, Any, T]]
 
 class IDComparable:
     id: Any
@@ -46,4 +72,13 @@ def cached_slot_property(name: str) -> Callable[[Callable[[T], T_co]], CachedSlo
     def decorator(func: Callable[[T], T_co]) -> CachedSlotProperty[T, T_co]:
         return CachedSlotProperty(name, func)
     return decorator
+
+async def maybe_coroutine(func: Callable[P, MaybeAwaitable[T]], *args: P.args, **kwargs: P.kwargs) -> T:
+    ret = func(*args, **kwargs)
+    if asyncio.iscoroutine(ret):
+        return await ret
+
+    return ret # type: ignore
     
+def find(iterable: Iterator[T], predicate: Callable[[T], bool]) -> List[T]:
+    return [item for item in iterable if predicate(item)]

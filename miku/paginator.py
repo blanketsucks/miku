@@ -1,46 +1,96 @@
 from __future__ import annotations
+
 from typing import (
     Any,
+    AsyncIterator,
     Dict, 
-    Generator, 
+    Callable, 
     Generic, 
-    List, 
+    List,
+    Literal, 
     Optional, 
     TYPE_CHECKING, 
     Type, 
-    TypeVar, 
+    TypeVar,
+    overload, 
 )
+from abc import ABC, abstractmethod
+
+from .query import Query
+from .utils import MaybeAwaitable, maybe_coroutine
 
 if TYPE_CHECKING:
     from .http import HTTPHandler
 
 T = TypeVar('T')
+S = TypeVar('S')
 
 __all__ = (
     'Page',
     'Paginator'
 )
 
+class AbstractAsyncPaginator(ABC, Generic[T]):
+    def __aiter__(self):
+        return self
+
+    async def __anext__(self) -> Page[T]:
+        page = await self.next()
+        if not page:
+            raise StopAsyncIteration
+
+        return page
+
+    def __await__(self):
+        return self.collect().__await__()
+
+    @abstractmethod
+    async def next(self) -> Optional[Page[T]]:
+        raise NotImplementedError 
+        
+    @abstractmethod
+    async def current(self) -> Optional[Page[T]]:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def previous(self) -> Optional[Page[T]]:
+        raise NotImplementedError
+
+    @overload
+    async def collect(self, *, with_pages: Literal[True]) -> List[Page[T]]:
+        ...
+    @overload
+    async def collect(self, *, with_pages: Literal[False]) -> List[T]:
+        ...
+    @overload
+    async def collect(self) -> List[T]:
+        ...
+    async def collect(self, *, with_pages: bool = False) -> Any:
+        if with_pages:
+            return [page async for page in self]
+
+        return [obj async for page in self for obj in page]
+
+    async def map(self, f: Callable[[T], MaybeAwaitable[S]]) -> AsyncIterator[S]:
+        async for page in self:
+            for obj in page:
+                yield await maybe_coroutine(f, obj)
+
+    async def filter(self, f: Callable[[T], MaybeAwaitable[bool]]) -> AsyncIterator[T]:
+        async for page in self:
+            for obj in page:
+                if await maybe_coroutine(f, obj):
+                    yield obj
 
 class Page(Generic[T]):
-    def __init__(
-        self,
-        type: str, 
-        payload: Dict[str, Any], 
-        model: Type[T], 
-        http: HTTPHandler,
-    ) -> None:
-        self.payload = payload['Page'][type]
-        self.info = payload['Page']['pageInfo']
-        self.current_item = 0
+    def __init__(self, http: HTTPHandler, model: Type[T], payload: List[Any]) -> None:
         self.http = http
         self.model = model
+        self.payload = payload
+        self.index = 0
 
-    def __repr__(self):
-        return '<Page number={0.number} entries={0.entries}>'.format(self)
-
-    def __getitem__(self, idx: int) -> T:
-        return self.model(self.payload[idx], self.http)
+    def __repr__(self) -> str:
+        return f'<Page entries={self.entries}>'
 
     def __iter__(self):
         return self
@@ -52,115 +102,151 @@ class Page(Generic[T]):
 
         return data
 
+    def __getitem__(self, index: int) -> T:
+        data = self.payload[index]
+        return self.model(data, self.http)
+
     @property
     def entries(self) -> int:
         return len(self.payload)
 
-    @property
-    def number(self) -> int:
-        return self.info['currentPage']
-
     def next(self) -> Optional[T]:
-        try:
-            data = self.payload[self.current_item]
-        except IndexError:
+        if self.index >= self.entries:
             return None
 
-        self.current_item += 1
+        data = self.payload[self.index]
+        self.index += 1
+
         return self.model(data, self.http)
 
-    def current(self) -> T:
-        data = self.payload[self.current_item]
+    def current(self) -> Optional[T]:
+        if self.index >= self.entries:
+            return None
+
+        data = self.payload[self.index]
         return self.model(data, self.http)
 
     def previous(self) -> T:
-        if not self.current_item:
-            index = 0
+        if self.index <= 0:
+            self.index = 0
         else:
-            index = self.current_item - 1
+            self.index -= 1
 
-        data = self.payload[index]
+        data = self.payload[self.index]
         return self.model(data, self.http)
 
-class Paginator(Generic[T]):
-    def __init__(self, http: HTTPHandler, type: str, query: str, vars: Dict[str, Any], model: Type[T]) -> None:
+class Paginator(AbstractAsyncPaginator[T]):
+    def __init__(self, http: HTTPHandler, model: Type[T], rtype: str, query: Query, **variables: Any) -> None:
         self.http = http
         self.query = query
-        self.type = type
-        self.vars = vars
+        self.rtype = rtype
+        self.variables = variables
         self.model = model
+
         self.has_next_page = True
         self.current_page = 0
         self.next_page = 1
-        self.pages: Dict[int, Page[T]] = {}
-
-    def get_page(self, page: int) -> Optional[Page[T]]:
-        return self.pages.get(page)
 
     async def fetch_page(self, page: int) -> Optional[Page[T]]:
-        vars = self.vars.copy()
-        vars['page'] = page
+        variables = self.variables.copy()
+        variables['page'] = page
 
-        data = await self.http.request(self.query, variables=vars)
+        data = await self.http.request(self.query, 'Page', **variables)
         if not data:
             return None
 
-        return Page(self.type, data, self.model, self.http)
+        return Page(self.http, self.model, data[self.rtype])
 
     async def next(self) -> Optional[Page[T]]:
         if not self.has_next_page:
             return None
 
-        self.vars['page'] = self.next_page
+        self.variables['page'] = self.next_page
 
-        data = await self.http.request(self.query, variables=self.vars)
+        data = await self.http.request(self.query, 'Page', **self.variables)
         if not data:
             return None
 
-        page = data['Page']['pageInfo']
+        page = data['pageInfo']
 
         self.has_next_page = page['hasNextPage']
         self.next_page = page['currentPage'] + 1
         self.current_page = page['currentPage']
 
-        page = Page(self.type, data, self.model, self.http)
-        self.pages[self.current_page] = page
-
-        return page
+        return Page(self.http, self.model, data[self.rtype])
 
     async def current(self) -> Optional[Page[T]]:
-        data = await self.http.request(self.query, variables=self.vars)
+        data = await self.http.request(self.query, 'Page', **self.variables)
         if not data:
             return None
 
-        return Page(self.type, data, self.model, self.http)
+        return Page(self.http, self.model, data[self.rtype])
 
     async def previous(self) -> Optional[Page[T]]:
-        vars = self.vars.copy()
-        page = self.current_page - 1
+        if not self.current_page:
+            self.current_page = 0
+            self.next_page = 1
+        else:
+            self.next_page = self.current_page
+            self.current_page -= 1
+        
+        self.variables['page'] = self.current_page
 
-        if self.current_page == 0:
-            page = 0
-
-        vars['page'] = page
-        data = await self.http.request(self.query, variables=self.vars)
+        data = await self.http.request(self.query, 'Page', **self.variables)
         if not data:
             return None
 
-        return Page(self.type, data, self.model, self.http)
+        return Page(self.http, self.model, data[self.rtype])
 
-    async def collect(self) -> List[T]:
-        return [obj async for page in self for obj in page]
+class ChunkPaginator(AbstractAsyncPaginator[T]):
+    def __init__(self, http: HTTPHandler, model: Type[T], rtype: str, query: Query, **variables: Any) -> None:
+        self.http = http
+        self.model = model
+        self.variables = variables
+        self.rtype = rtype
+        self.query = query
+        self.chunks: Dict[int, Any] = {}
+        self.has_next_chunk = True
 
-    def __await__(self) -> Generator[Any, None, List[T]]:
-        return self.collect().__await__()
+    async def fetch_chunk(self, chunk: int) -> Optional[Page[T]]:
+        variables = self.variables.copy()
+        variables['chunk'] = chunk
 
-    def __aiter__(self):
-        return self
-
-    async def __anext__(self) -> Page[T]:
-        data = await self.next()
+        data = await self.http.request(self.query, self.rtype, **variables)
         if not data:
-            raise StopAsyncIteration
+            return None
 
-        return data
+        return Page(self.http, self.model, data['lists'])
+
+    async def current(self) -> Optional[Page[T]]:
+        data = await self.http.request(self.query, self.rtype, **self.variables)
+        if not data:
+            return None
+
+        return Page(self.http, self.model, data['lists'])
+
+    async def next(self) -> Optional[Page[T]]:
+        if not self.has_next_chunk:
+            return None
+
+        data = await self.http.request(self.query, self.rtype, **self.variables)
+        if not data:
+            self.has_next_chunk = False
+            return None
+
+        self.has_next_chunk = data['hasNextChunk']
+        self.variables['chunk'] += 1
+
+        return Page(self.http, self.model, data['lists'])
+
+    async def previous(self) -> Optional[Page[T]]:
+        if not self.variables['chunk']:
+            return None
+
+        self.variables['chunk'] -= 1
+        data = await self.http.request(self.query, self.rtype, **self.variables)
+        if not data:
+            return None
+
+        self.has_next_chunk = data['hasNextChunk']
+        return Page(self.http, self.model, data['lists'])

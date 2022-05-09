@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 from typing import Any, Dict, List, Optional
+from abc import ABC, abstractmethod
 
 __all__ = (
     'QueryIncomplete',
@@ -12,11 +15,22 @@ class QueryIncomplete(Exception):
     def __init__(self, element: str) -> None:
         super().__init__(f'Query missing {element!r} element')
 
-class QueryOperation:
+class AbstractQueryElement(ABC):
+    def __str__(self) -> str:
+        return self.build()
+
+    @abstractmethod
+    def build(self) -> str:
+        raise NotImplementedError
+
+class QueryOperation(AbstractQueryElement):
     def __init__(self, type: str, *, name: Optional[str] = None, variables: Optional[Dict[str, str]] = None) -> None:
         self.name = name
         self.type = type
         self.variables = variables or {}
+
+    def __repr__(self) -> str:
+        return f'<QueryOperation type={self.type!r} name={self.name!r}>'
 
     def build(self):
         vars = ', '.join([f'{k}: {v}' for k, v in self.variables.items()])
@@ -29,12 +43,9 @@ class QueryOperation:
         if self.variables:
             operation += f'({vars})'
 
-        return operation + ' {'
+        return operation
 
-    def __str__(self) -> str:
-        return  self.build()
-
-class QueryField:
+class QueryField(AbstractQueryElement):
     def __init__(self, name: str, *items: str, **arguments: Any) -> None:
         self.name = name
         self.arguments = arguments
@@ -68,14 +79,14 @@ class QueryField:
 
         return query
 
-    def __str__(self) -> str:
-        return self.build()
-
-class QueryFields:
+class QueryFields(AbstractQueryElement):
     def __init__(self, name: str, fields: Optional[List[QueryField]] = None, **arguments: Any) -> None:
         self.name = name
         self.fields = fields or []
         self.arguments = arguments
+    
+    def __repr__(self) -> str:
+        return f'<QueryFields name={self.name!r}>'
 
     def add_field(self, name: str, *items: str, **arguments: Any):
         field = QueryField(name, *items, **arguments)
@@ -96,10 +107,7 @@ class QueryFields:
 
         return query
 
-    def __str__(self) -> str:
-        return self.build()
-
-class Query:
+class Query(AbstractQueryElement):
     def __init__(self, *, operation: Optional[QueryOperation] = None, fields: Optional[QueryFields] = None) -> None:
         self._operation = operation
         self._fields = fields
@@ -140,12 +148,8 @@ class Query:
         if not self.operation or not self.fields:
             raise QueryIncomplete('operation')
 
-        operation = self.operation.build()
-
-        query = operation + ' '
+        query = self.operation.build() + '{ '
         query += self.fields.build()
 
         return query + ' }'
 
-    def __str__(self) -> str:
-        return self.build()

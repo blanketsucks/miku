@@ -34,6 +34,9 @@ class HTTPException(Exception):
 class BadRequest(HTTPException):
     pass
 
+class Unauthorized(HTTPException):
+    pass
+
 class Forbidden(HTTPException):
     pass
 
@@ -45,6 +48,7 @@ class AniListServerError(HTTPException):
 
 ERROR_MAPPING: Dict[int, Type[HTTPException]] = {
     400: BadRequest,
+    401: Unauthorized,
     403: Forbidden,
     404: NotFound,
     500: AniListServerError

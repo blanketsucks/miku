@@ -6,8 +6,7 @@ from .query import Query, QueryField, QueryFields, QueryOperation
 from .fields import *
 from .media import Media
 from .character import Character
-from .paginator import Paginator
-from .chunk import ChunkPaginator
+from .paginator import Paginator, ChunkPaginator
 from .user import User, MediaListGroup
 from .errors import HTTPException, ERROR_MAPPING
 from . import types
@@ -19,10 +18,15 @@ __all__ = (
 class HTTPHandler:
     URL = 'https://graphql.anilist.co'
 
-    def __init__(self, loop: asyncio.AbstractEventLoop, session: Optional[aiohttp.ClientSession] = None) -> None:
-        self.session = session
+    def __init__(
+        self, 
+        loop: asyncio.AbstractEventLoop, 
+        token: Optional[str] = None,
+        session: Optional[aiohttp.ClientSession] = None
+    ) -> None:
+        self.session: aiohttp.ClientSession = session # type: ignore
         self.loop = loop
-        self.token: Optional[str] = None
+        self.token = token
         self.lock = asyncio.Lock()
 
     async def create_session(self) -> aiohttp.ClientSession:
@@ -44,8 +48,8 @@ class HTTPHandler:
             data = await response.json()
             return data['access_token']
 
-    async def request(self, query: str, type: Optional[str] = None, variables: Optional[Dict[str, Any]] = None):
-        headers = {'Content-Type': 'application/json', 'Accept': 'application/json',}
+    async def request(self, query: Query, rtype: Optional[str] = None, **variables: Any):
+        headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
         if self.token:
             headers['Authorization'] = 'Bearer ' + self.token
 
@@ -53,7 +57,7 @@ class HTTPHandler:
         if not session:
             session = await self.create_session()
 
-        payload: Dict[str, Any] = {'query': query}
+        payload: Dict[str, Any] = {'query': query.build()}
         if variables:
             payload['variables'] = variables
 
@@ -61,13 +65,13 @@ class HTTPHandler:
             async with session.post(self.URL, json=payload, headers=headers) as response:
                 data = await response.json()
                 if response.status == 200:
-                    return data['data'] if type is None else data['data'][type]
+                    return data['data'] if type is None else data['data'][rtype]
 
                 if response.status == 429:
                     retry_after = float(response.headers['Retry-After'])
                     await asyncio.sleep(retry_after)
 
-                    return await self.request(query, type, variables)
+                    return await self.request(query, rtype, **variables)
 
                 error = ERROR_MAPPING.get(response.status, HTTPException)
                 raise error(response.status, data)
@@ -80,31 +84,33 @@ class HTTPHandler:
 
         return await self.session.close()
 
-    def parse_args(self, id: Union[int, str]):
+    def parse_args(self, search: Union[int, str]):
         operation_variables: Dict[str, Any] = {}
         variables: Dict[str, Any] = {}
         arguments: Dict[str, Any] = {}
 
-        if isinstance(id, str):
+        if isinstance(search, str):
             operation_variables['$search'] = 'String'
             arguments['search'] = '$search'
-            variables['search'] = id
+            variables['search'] = search
         else:
             operation_variables['$id'] = 'Int'
             arguments['id'] = '$id'
-            variables['id'] = id
+            variables['id'] = search
 
         return operation_variables, variables, arguments
 
     def build_query(self, fields: Union[Dict[str, Any], Tuple[Any, ...]], obj: Union[QueryFields, QueryField]) -> None:
+        def _build_dict(f: Dict[str, Any]) -> None:
+            name = next(iter(f))
+            return self.build_query(f[name], obj.add_field(name))
+
         if isinstance(fields, dict):
-            name = list(fields.keys())[0]
-            return self.build_query(fields[name], obj.add_field(name))
+            return _build_dict(fields)
 
         for field in fields:
             if isinstance(field, dict):
-                name = list(field.keys())[0]
-                self.build_query(field[name], obj.add_field(name))
+                _build_dict(field)
             else:
                 obj.add_field(field)
 
@@ -115,15 +121,13 @@ class HTTPHandler:
         self.build_query(MEDIA_TAG_FIELDS, fields)
 
         query = Query(operation=operation, fields=fields)
-        query = query.build()
-
         return await self.request(query, 'MediaTagCollection')
 
     async def get_all_genres(self) -> List[str]:
         operation = QueryOperation(type='query')
         fields = QueryFields('GenreCollection')
 
-        query = Query(operation=operation, fields=fields).build()
+        query = Query(operation=operation, fields=fields)
         return await self.request(query, 'GenreCollection')
 
     async def get_thread_from_user_id(self, user_id: int) -> types.Thread:
@@ -133,10 +137,7 @@ class HTTPHandler:
         self.build_query(THREAD_FIELDS, fields)
 
         query = Query(operation=operation, fields=fields)
-        query = query.build()
-
-        variables = {'userId': user_id}
-        return await self.request(query, 'Thread', variables)
+        return await self.request(query, 'Thread', userId=user_id)
 
     async def get_thread(self, search: Union[str, int]) -> types.Thread:
         operation_variables, variables, arguments = self.parse_args(search)
@@ -146,9 +147,7 @@ class HTTPHandler:
         self.build_query(THREAD_FIELDS, fields)
         
         query = Query(operation=operation, fields=fields)
-        query = query.build()
-
-        return await self.request(query, 'Thread', variables)
+        return await self.request(query, 'Thread', **variables)
 
     async def get_thread_comments(self, id: int) -> List[types.ThreadComment]:
         operation_variables, variables, arguments = self.parse_args(id)
@@ -158,9 +157,7 @@ class HTTPHandler:
         self.build_query(THREAD_COMMENT_FIELDS, fields)
 
         query = Query(operation=operation, fields=fields)
-        query = query.build()
-
-        return await self.request(query, 'ThreadComment', variables)
+        return await self.request(query, 'ThreadComment', **variables)
 
     async def get_user(self, search: Union[str, int]) -> types.User:
         operation_variables, variables, arguments = self.parse_args(search)
@@ -173,9 +170,19 @@ class HTTPHandler:
         self.build_query(USER_FAVOURITES_FIELDS, favourites)
 
         query = Query(operation=operation, fields=fields)
-        query = query.build()
+        return await self.request(query, 'User', **variables)
 
-        return await self.request(query, 'User', variables)
+    async def get_current_user(self) -> types.User:
+        operation = QueryOperation(type='query')
+
+        fields = QueryFields('Viewer')
+        self.build_query(USER_FIELDS, fields)
+
+        favourites = fields.add_field('favourites')
+        self.build_query(USER_FAVOURITES_FIELDS, favourites)
+
+        query = Query(operation=operation, fields=fields)
+        return await self.request(query, 'Viewer')
 
     async def get_media(self, search: Union[str, int], type: Optional[str] = None) -> types.Media:
         operation_variables, variables, arguments = self.parse_args(search)
@@ -188,8 +195,7 @@ class HTTPHandler:
         self.build_query(MEDIA_FIELDS, fields)
         query = Query(operation=operation, fields=fields)
 
-        query = query.build()
-        return await self.request(query, 'Media', variables)
+        return await self.request(query, 'Media', **variables)
 
     async def get_media_trend(self, media_id: int) -> types.MediaTrend:
         operation = QueryOperation(type='query', variables={'$mediaId': 'Int'})
@@ -198,10 +204,7 @@ class HTTPHandler:
         self.build_query(MEDIA_TREND_FIELDS, fields)
 
         query = Query(operation=operation, fields=fields)
-        query = query.build()
-
-        variables = {'mediaId': media_id}
-        return await self.request(query, 'MediaTrend', variables)
+        return await self.request(query, 'MediaTrend', mediaId=media_id)
 
     async def get_studio(self, search: Union[str, int]) -> types.Studio:
         operation_variables, variables, arguments = self.parse_args(search)
@@ -211,9 +214,7 @@ class HTTPHandler:
         self.build_query(STUDIO_FIELDS, fields)
 
         query = Query(operation=operation, fields=fields)
-        query = query.build()
-
-        return await self.request(query, 'Studio', variables)
+        return await self.request(query, 'Studio', **variables)
 
     async def get_staff(self, search: Union[str, int]) -> types.Staff:
         operation_variables, variables, arguments = self.parse_args(search)
@@ -230,9 +231,7 @@ class HTTPHandler:
         self.build_query(CHARACTER_FIELDS, nodes)
 
         query = Query(operation=operation, fields=fields)
-        query = query.build()
-
-        return await self.request(query, 'Staff', variables)
+        return await self.request(query, 'Staff', **variables)
 
     async def get_site_statisics(self) -> types.SiteStatistics:
         operation = QueryOperation(type='query')
@@ -241,8 +240,6 @@ class HTTPHandler:
         self.build_query(SITE_STATISTICS_FIELDS, fields)
 
         query = Query(operation=operation, fields=fields)
-        query = query.build()
-
         return await self.request(query, 'SiteStatistics')
 
     async def get_character(self, search: Union[str, int]) -> types.Character:
@@ -257,10 +254,7 @@ class HTTPHandler:
         self.build_query(MEDIA_FIELDS, nodes)
 
         query = Query(operation=operation, fields=fields)
-        query = query.build()
-
-        variables = {'search': search}
-        return await self.request(query, 'Character', variables)
+        return await self.request(query, 'Character', **variables)
 
     def get_users(self, search: str, *, per_page: int = 5, page: int = 0):
         operation = QueryOperation(
@@ -275,15 +269,7 @@ class HTTPHandler:
         self.build_query(USER_FIELDS, field)
 
         query = Query(operation=operation, fields=fields)
-        query = query.build()
-
-        variables = {
-            'search': search,
-            'page': page,
-            'perPage': per_page
-        }
-
-        return Paginator(self, 'users', query, variables, User)
+        return Paginator(self, User, 'users', query, search=search, page=page, perPage=per_page)
 
     def get_medias(self, search: str, type: Optional[str] = None, *, per_page: int = 5, page: int = 0):
         operation = QueryOperation(
@@ -305,15 +291,7 @@ class HTTPHandler:
         self.build_query(CHARACTER_FIELDS, nodes)
 
         query = Query(operation=operation, fields=fields)
-        query = query.build()
-
-        variables = {
-            'search': search,
-            'page': page,
-            'perPage': per_page
-        }
-
-        return Paginator(self, 'media', query, variables, Media)  
+        return Paginator(self, Media, 'media', query, search=search, page=page, perPage=per_page)
 
     def get_characters(self, search: str, *, per_page: int = 5, page: int = 0):
         operation = QueryOperation(
@@ -332,15 +310,7 @@ class HTTPHandler:
         self.build_query(MEDIA_FIELDS, nodes)
 
         query = Query(operation=operation, fields=fields)
-        query = query.build()
-
-        variables = {
-            'search': search,
-            'page': page,
-            'perPage': per_page
-        }
-
-        return Paginator(self, 'characters', query, variables, Character)
+        return Paginator(self, Character, 'characters', query, search=search, page=page, perPage=per_page)
 
     def get_media_list_collection(
         self, user_id: int, type: str, per_chunk: int = 50, chunk: int = 0
@@ -359,7 +329,7 @@ class HTTPHandler:
         )
 
         self.build_query(MEDIA_LIST_COLLECTION_FIELDS, fields)
-        query = Query(operation=operation, fields=fields).build()
+        query = Query(operation=operation, fields=fields)
 
         variables = {
             'userId': user_id,
@@ -368,4 +338,4 @@ class HTTPHandler:
             'perChunk': per_chunk
         }
 
-        return ChunkPaginator(self, MediaListGroup, 'MediaListCollection', variables, query)
+        return ChunkPaginator(self, MediaListGroup, 'MediaListCollection', query, **variables)

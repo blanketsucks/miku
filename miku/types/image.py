@@ -3,5 +3,5 @@ from typing import Optional, TypedDict
 __all__ = 'Image',
 
 class Image(TypedDict):
-    large: Optional[str]
+    large: str
     medium: Optional[str]

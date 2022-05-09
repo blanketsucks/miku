@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Any, List, Literal, Optional, Union, overload
 import aiohttp
+import sys
 import asyncio
 
 from .http import HTTPHandler
@@ -15,6 +16,8 @@ from .statistics import SiteStatistics
 from .threads import Thread
 from .enums import MediaType
 
+PY310 = sys.version_info >= (3, 10)
+
 def _get_event_loop(loop: Optional[asyncio.AbstractEventLoop] = None) -> asyncio.AbstractEventLoop:
     if loop:
         if not isinstance(loop, asyncio.BaseEventLoop):
@@ -25,7 +28,10 @@ def _get_event_loop(loop: Optional[asyncio.AbstractEventLoop] = None) -> asyncio
     try:
         return asyncio.get_running_loop()
     except RuntimeError:
-        return asyncio.get_event_loop()
+        if not PY310:
+            return asyncio.get_event_loop()
+
+        raise
 
 __all__ = (
     'AnilistClient',
@@ -34,28 +40,13 @@ __all__ = (
 class AnilistClient:
     def __init__(
         self,
+        access_token: Optional[str] = None,
         *,
         loop: Optional[asyncio.AbstractEventLoop] = None, 
         session: Optional[aiohttp.ClientSession] = None
     ) -> None:
         self.loop = _get_event_loop(loop)
-        self.http = HTTPHandler(self.loop, session)
-
-    @classmethod
-    def from_access_token(cls, access_token: str, **kwargs: Any) -> AnilistClient:
-        """
-        Creates a client from an access token.
-
-        Args:
-            access_token: The access token to use.
-
-        Returns:
-            A [AnilistClient](./client.md) object.
-        """
-        self = cls(**kwargs)
-        self.http.token = access_token
-
-        return self
+        self.http = HTTPHandler(self.loop, access_token, session)
 
     @classmethod
     async def from_authorization_pin(cls, pin: str, client_id: str, client_secret: str, **kwargs: Any) -> AnilistClient:
@@ -72,7 +63,7 @@ class AnilistClient:
     async def __aenter__(self):
         return self
 
-    async def __aexit__(self, *args: Any):
+    async def __aexit__(self, *_: Any):
         await self.close()
 
     async def close(self):
@@ -84,6 +75,10 @@ class AnilistClient:
 
     async def fetch_user(self, search: Union[int, str]) -> User:
         data = await self.http.get_user(search)
+        return User(data, self.http)
+
+    async def fetch_current_user(self) -> User:
+        data = await self.http.get_current_user()
         return User(data, self.http)
 
     @overload

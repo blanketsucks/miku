@@ -103,6 +103,6 @@ class Media(TypedDict):
     nextAiringEpisode: Optional[MediaAiringSchedule]
     streamingEpisodes: Optional[List[MediaStreamingEpisode]]
     rankings: List[MediaRank]
-    bannerImage: Image
+    bannerImage: str
     coverImage: Image
     characters: CharacterNodes
