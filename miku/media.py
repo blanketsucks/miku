@@ -58,7 +58,7 @@ class MediaTitle:
 
     def __init__(self, payload: types.MediaTitle) -> None:
         self.romaji: str = payload['romaji']
-        self.english: str = payload['english']
+        self.english: Optional[str] = payload['english']
         self.native: str = payload['native']
 
     def __repr__(self) -> str:
@@ -297,3 +297,4 @@ class Anime(Media):
 
 class Manga(Media):
     pass
+

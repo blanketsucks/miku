@@ -32,3 +32,4 @@ class FuzzyDate:
         self.year: Optional[int] = payload['year']
         self.month: Optional[int] = payload['month']
         self.day: Optional[int] = payload['day']
+

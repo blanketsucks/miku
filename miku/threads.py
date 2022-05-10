@@ -159,3 +159,4 @@ class Thread(IDComparable):
     async def fetch_comments(self) -> List[ThreadComment]:
         data = await self._http.get_thread_comments(self.id)
         return [ThreadComment(comment, self._http) for comment in data]
+

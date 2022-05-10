@@ -226,3 +226,4 @@ MEDIA_LIST_COLLECTION_FIELDS: Tuple[Any, ...] = (
     'hasNextChunk',
     {'lists': MEDIA_LIST_GROUP_FIELDS},
 )
+

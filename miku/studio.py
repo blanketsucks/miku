@@ -40,3 +40,4 @@ class Studio(IDComparable):
     def medias(self) -> List[Media]:
         medias = self._payload['media']['nodes']
         return [Media(media, self._http) for media in medias]
+

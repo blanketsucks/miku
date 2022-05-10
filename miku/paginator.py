@@ -6,6 +6,7 @@ from typing import (
     Dict, 
     Callable, 
     Generic, 
+    Generator,
     List,
     Literal, 
     Optional, 
@@ -26,9 +27,44 @@ T = TypeVar('T')
 S = TypeVar('S')
 
 __all__ = (
+    'AbstractAsyncPaginator',
     'Page',
-    'Paginator'
+    'Paginator',
+    'ChunkPaginator'
 )
+
+class _MappedPaginator(Generic[T, S]):
+    def __init__(self, paginator: AbstractAsyncPaginator[T], f: Callable[[T], MaybeAwaitable[S]]) -> None:
+        self._paginator = paginator
+        self._func = f
+
+    def __await__(self) -> Generator[Any, None, List[S]]:
+        return self.collect().__await__()
+
+    async def __aiter__(self) -> AsyncIterator[S]:
+        async for page in self._paginator:
+            for item in page:
+                yield await maybe_coroutine(self._func, item)
+
+    async def collect(self) -> List[S]:
+        return [await maybe_coroutine(self._func, item) async for page in self._paginator for item in page]
+
+class _FilteredPaginator(Generic[T]):
+    def __init__(self, paginator: AbstractAsyncPaginator[T], f: Callable[[T], MaybeAwaitable[bool]]) -> None:
+        self._paginator = paginator
+        self._func = f
+
+    def __await__(self) -> Generator[Any, None, List[T]]:
+        return self.collect().__await__()
+
+    async def __aiter__(self) -> AsyncIterator[T]:
+        async for page in self._paginator:
+            for item in page:
+                if await maybe_coroutine(self._func, item):
+                    yield item
+
+    async def collect(self) -> List[T]:
+        return [item async for page in self._paginator for item in page if await maybe_coroutine(self._func, item)]
 
 class AbstractAsyncPaginator(ABC, Generic[T]):
     def __aiter__(self):
@@ -71,16 +107,11 @@ class AbstractAsyncPaginator(ABC, Generic[T]):
 
         return [obj async for page in self for obj in page]
 
-    async def map(self, f: Callable[[T], MaybeAwaitable[S]]) -> AsyncIterator[S]:
-        async for page in self:
-            for obj in page:
-                yield await maybe_coroutine(f, obj)
+    def map(self, func: Callable[[T], MaybeAwaitable[S]]) -> _MappedPaginator[T, S]:
+        return _MappedPaginator(self, func)
 
-    async def filter(self, f: Callable[[T], MaybeAwaitable[bool]]) -> AsyncIterator[T]:
-        async for page in self:
-            for obj in page:
-                if await maybe_coroutine(f, obj):
-                    yield obj
+    def filter(self, predicate: Callable[[T], MaybeAwaitable[bool]]) -> _FilteredPaginator[T]:
+        return _FilteredPaginator(self, predicate)
 
 class Page(Generic[T]):
     def __init__(self, http: HTTPHandler, model: Type[T], payload: List[Any]) -> None:
@@ -250,3 +281,4 @@ class ChunkPaginator(AbstractAsyncPaginator[T]):
 
         self.has_next_chunk = data['hasNextChunk']
         return Page(self.http, self.model, data['lists'])
+

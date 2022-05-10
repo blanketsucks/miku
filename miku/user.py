@@ -253,3 +253,4 @@ class User(IDComparable):
         self, *, type: MediaType, per_chunk: int = 50, chunk: int = 0
     ) -> ChunkPaginator[MediaListGroup]:
         return self._http.get_media_list_collection(self.id, type.value, per_chunk, chunk)
+

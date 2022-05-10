@@ -64,4 +64,4 @@ class SiteStatistics:
     def reviews(self) -> List[SiteTrend]:
         users = self._payload['reviews']['nodes']
         return [SiteTrend(user) for user in users]
-    
+

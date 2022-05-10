@@ -140,3 +140,4 @@ class AnilistClient:
 
     def characters(self, name: str, *, per_page: int = 5, page: int = 0) -> Paginator[Character]:
         return self.http.get_characters(name, per_page=per_page, page=page)
+

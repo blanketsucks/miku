@@ -3,8 +3,6 @@ from __future__ import annotations
 from typing import (
     TYPE_CHECKING, 
     Any,
-    AsyncIterable,
-    AsyncIterator,
     Callable, 
     Coroutine, 
     Generic,
@@ -14,7 +12,6 @@ from typing import (
     TypeVar, 
     Type, 
     overload, 
-    Iterable,
     Union
 )
 import asyncio
@@ -82,3 +79,4 @@ async def maybe_coroutine(func: Callable[P, MaybeAwaitable[T]], *args: P.args, *
     
 def find(iterable: Iterator[T], predicate: Callable[[T], bool]) -> List[T]:
     return [item for item in iterable if predicate(item)]
+

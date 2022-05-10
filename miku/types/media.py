@@ -30,7 +30,7 @@ class MediaTrend(TypedDict):
 
 class MediaTitle(TypedDict):
     romaji: str
-    english: str
+    english: Optional[str]
     native: str
 
 class MediaTrailer(TypedDict):

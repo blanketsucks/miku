@@ -109,3 +109,4 @@ class MediaListStatus(Enum):
     DROPPED = 'DROPPED'
     PAUSED = 'PAUSED'
     REPEATING = 'REPEATING'
+

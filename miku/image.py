@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, IO, Union
 from aiohttp import ClientSession
 
 from . import types
@@ -40,8 +40,12 @@ class Image:
             data = await response.read()
             return data
 
-    async def save(self, fp: str, *, large: bool = True, medium: bool = False) -> int:
+    async def save(self, file: Union[str, IO[bytes]], *, large: bool = True, medium: bool = False) -> int:
         data = await self.read(large=large, medium=medium)
 
-        with open(fp, 'wb') as file:
+        if isinstance(file, str):
+            with open(file, 'wb') as f:
+                return f.write(data)
+        else:
             return file.write(data)
+

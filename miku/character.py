@@ -56,3 +56,4 @@ class Character:
     @property
     def birth(self) -> FuzzyDate:
         return FuzzyDate(self._payload['dateOfBirth'])
+

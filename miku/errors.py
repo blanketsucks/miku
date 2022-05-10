@@ -53,3 +53,4 @@ ERROR_MAPPING: Dict[int, Type[HTTPException]] = {
     404: NotFound,
     500: AniListServerError
 }
+
